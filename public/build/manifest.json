@@ -1,0 +1,7 @@
+{
+  "resources/css/filament/dashboard/theme.css": {
+    "file": "css/filament/style.css",
+    "src": "resources/css/filament/dashboard/theme.css",
+    "isEntry": true
+  }
+}

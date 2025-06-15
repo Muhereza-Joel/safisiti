@@ -32,7 +32,7 @@ class DashboardPanelProvider extends PanelProvider
             ->login()
             ->profile()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Emerald,
             ])
             ->font('sans-serif - system-ui - -apple-system - BlinkMacSystemFont - "Segoe UI" - Roboto - "Helvetica Neue" - Arial - sans-serif')
             ->theme(
