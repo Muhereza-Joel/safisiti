@@ -69,8 +69,11 @@ class DashboardPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                \ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin::make()->usingPage(HealthCheckResults::class),
+                \ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin::make()
+                    ->usingPage(HealthCheckResults::class)
+                    ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator')),
                 \ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin::make()->usingPage(Backups::class)
+                    ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator'))
             ]);
     }
 }

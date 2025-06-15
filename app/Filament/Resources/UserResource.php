@@ -47,7 +47,7 @@ class UserResource extends Resource
                             ->relationship(
                                 name: 'roles',
                                 titleAttribute: 'name',
-
+                                modifyQueryUsing: fn($query) => $query->where('name', '!=', 'super_admin')
                             )
                             ->preload()
                             ->searchable()
