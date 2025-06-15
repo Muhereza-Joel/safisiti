@@ -60,7 +60,8 @@ class DashboardPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->navigationGroups([
-                'Administration',
+                'Administrative Units',
+                'User Management',
                 'Roles & Permissions'
 
             ])

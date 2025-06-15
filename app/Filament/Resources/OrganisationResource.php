@@ -19,7 +19,7 @@ class OrganisationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
-    protected static ?string $navigationGroup = "Administration";
+    protected static ?string $navigationGroup = "Administrative Units";
 
     protected static ?int $navigationSort = 1;
 
