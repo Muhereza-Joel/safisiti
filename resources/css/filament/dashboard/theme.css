@@ -1,0 +1,68 @@
+@import "/public/css/filament/filament/app.css"; /* Custom app styles */
+@import "/public/css/filament/forms/forms.css"; /* Form styles */
+@import "/public/css/filament/support/support.css"; /* Support styles */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sidebar Styles */
+.fi-sidebar {
+    background-color: #121d36 !important;
+}
+.dark .fi-sidebar {
+    background-color: #131415f9 !important; /* Slightly darker in dark mode */
+}
+
+.fi-sidebar-item-label {
+    color: #fff !important;
+}
+.dark .fi-sidebar-item-label {
+    color: #e0e6ed !important;
+}
+
+/* Active item */
+.fi-sidebar-item.fi-active.fi-sidebar-item-active a {
+    background-color: #1e2a47 !important;
+    color: #fff !important;
+}
+.dark .fi-sidebar-item.fi-active.fi-sidebar-item-active a {
+    background-color: #24304d !important;
+    color: #fff !important;
+}
+
+/* Hover */
+.fi-sidebar-item a:hover {
+    background-color: #020005 !important;
+    color: #fff !important;
+}
+.dark .fi-sidebar-item a:hover {
+    background-color: #1a1a2e !important;
+    color: #fff !important;
+}
+
+/* Body background */
+body {
+    background-color: #f4f7fa !important;
+}
+.dark body {
+    background-color: #131415f9 !important; /* Tailwind slate-900 */
+}
+
+/* Expired banner */
+.expired {
+    background-color: #f5b9b9 !important;
+    border-left: 3px solid #f00 !important;
+}
+.dark .expired {
+    background-color: #7f1d1d !important; /* Darker red */
+    border-left: 3px solid #dc2626 !important; /* Tailwind red-600 */
+}
+
+/* Optional header styling */
+.fi-header {
+    /* Add light/dark header background if needed */
+}
+/* .dark .fi-header {
+    background-color: #1e293b !important;
+} */
