@@ -41,6 +41,11 @@
     color: #fff !important;
 }
 
+.dark .filament-spatie-health div div {
+    background-color: #1a1a2e !important;
+    color: #fff !important;
+}
+
 /* Body background */
 body {
     background-color: #e6eaee !important;
