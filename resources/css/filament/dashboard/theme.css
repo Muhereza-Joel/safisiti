@@ -43,7 +43,7 @@
 
 /* Body background */
 body {
-    background-color: #f4f7fa !important;
+    background-color: #e6eaee !important;
 }
 .dark body {
     background-color: #131415f9 !important; /* Tailwind slate-900 */
