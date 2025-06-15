@@ -33,18 +33,18 @@ class CellResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Name')
                             ->placeholder('e.g. Kisenyi Cell')
-                            ->helperText('Enter the name of the entity (e.g. household, cell, etc.)')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Enter the name of the entity (e.g. household, cell, etc.)' : null)
                             ->required()
                             ->maxLength(161),
                     ]),
 
                 Forms\Components\Section::make('Ward Association')
-                    ->description('Associate this record with the appropriate ward.')
+                    ->description(fn() => $form->getOperation() !== 'view' ? 'Associate this record with the appropriate ward.' : null)
                     ->schema([
                         Forms\Components\Select::make('ward_id')
                             ->label('Ward')
                             ->placeholder('Select the relevant ward')
-                            ->helperText('Only wards within your organization are listed.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Only wards within your organization are listed.' : null)
                             ->relationship(
                                 name: 'ward',
                                 titleAttribute: 'name',
