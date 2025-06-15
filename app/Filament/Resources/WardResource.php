@@ -127,19 +127,24 @@ class WardResource extends Resource implements HasShieldPermissions
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('code')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('population')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('area_sq_km')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('latitude')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('longitude')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('N/A'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
