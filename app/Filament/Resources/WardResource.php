@@ -54,14 +54,14 @@ class WardResource extends Resource implements HasShieldPermissions
                         Forms\Components\TextInput::make('name')
                             ->label('Ward Name')
                             ->placeholder('e.g. Central Ward')
-                            ->helperText('Enter the official name of the ward.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Enter the official name of the ward.' : null)
                             ->required()
                             ->maxLength(161),
 
                         Forms\Components\TextInput::make('code')
                             ->label('Ward Code')
                             ->placeholder('e.g. WD-001')
-                            ->helperText('Optional government or system code for this ward.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Optional government or system code for this ward.' : null)
                             ->maxLength(161),
                     ]),
 
@@ -69,27 +69,27 @@ class WardResource extends Resource implements HasShieldPermissions
                     ->schema([
                         Forms\Components\TextInput::make('population')
                             ->placeholder('e.g. 12000')
-                            ->helperText('Estimated population in this ward.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Estimated population in this ward.' : null)
                             ->numeric(),
 
                         Forms\Components\TextInput::make('area_sq_km')
                             ->label('Area (sq. km)')
                             ->placeholder('e.g. 14.6')
-                            ->helperText('Approximate size of the ward in square kilometers.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Approximate size of the ward in square kilometers.' : null)
                             ->numeric(),
                     ]),
 
                 Forms\Components\Section::make('Geolocation')
-                    ->description('Optional GPS coordinates for the center of the ward.')
+                    ->description(fn() => $form->getOperation() !== 'view' ? 'Optional GPS coordinates for the center of the ward.' : null)
                     ->schema([
                         Forms\Components\TextInput::make('latitude')
                             ->placeholder('e.g. -1.2921')
-                            ->helperText('Latitude of the ward center point.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Latitude of the ward center point.' : null)
                             ->numeric(),
 
                         Forms\Components\TextInput::make('longitude')
                             ->placeholder('e.g. 36.8219')
-                            ->helperText('Longitude of the ward center point.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Longitude of the ward center point.' : null)
                             ->numeric(),
                     ]),
 
@@ -98,7 +98,7 @@ class WardResource extends Resource implements HasShieldPermissions
                         Forms\Components\RichEditor::make('description')
                             ->label('Description or Notes')
                             ->placeholder('Write any remarks or additional info about the ward...')
-                            ->helperText('Add optional details, history, or remarks about the ward.')
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Add optional details, history, or remarks about the ward.' : null)
                             ->toolbarButtons([
                                 'bold',
                                 'italic',

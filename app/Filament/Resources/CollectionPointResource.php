@@ -33,7 +33,7 @@ class CollectionPointResource extends Resource
                             ->required()
                             ->maxLength(161)
                             ->placeholder('e.g. Central Market Collection Point')
-                            ->helperText('The official name of this collection point'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'The official name of this collection point' : null),
 
                         Forms\Components\Select::make('category')
                             ->required()
@@ -52,13 +52,13 @@ class CollectionPointResource extends Resource
                             ])
                             ->native(false)
                             ->placeholder('Select Category')
-                            ->helperText('Type of establishment'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Type of establishment' : null),
 
                         Forms\Components\TextInput::make('head_name')
                             ->required()
                             ->maxLength(161)
                             ->placeholder('e.g. Mugume Joseph')
-                            ->helperText('Name of the person in charge'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Name of the person in charge' : null),
                     ])
                     ->columns(3),
 
@@ -69,13 +69,13 @@ class CollectionPointResource extends Resource
                             ->required()
                             ->maxLength(161)
                             ->placeholder('e.g. 255712345678')
-                            ->helperText('Include country code without + sign'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Include country code without + sign' : null),
 
                         Forms\Components\TextInput::make('email')
                             ->email()
                             ->maxLength(161)
                             ->placeholder('e.g. contact@example.com')
-                            ->helperText('Optional email address'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Optional email address' : null),
                     ])
                     ->columns(2),
 
@@ -92,7 +92,7 @@ class CollectionPointResource extends Resource
                             ->preload()
                             ->live() // Makes the field update other fields on change
                             ->afterStateUpdated(fn(callable $set) => $set('cell_id', null)) // Reset cell when ward changes
-                            ->helperText('Select the ward where this point is located'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Select the ward where this point is located' : null),
 
                         Forms\Components\Select::make('cell_id')
                             ->options(function (callable $get) {
@@ -107,25 +107,25 @@ class CollectionPointResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->helperText('Select the cell where this point is located'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Select the cell where this point is located' : null),
 
                         Forms\Components\Textarea::make('address')
                             ->required()
                             ->columnSpanFull()
                             ->placeholder('Full physical address with landmarks')
-                            ->helperText('Detailed address information for collection teams'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Detailed address information for collection teams' : null),
 
                         Forms\Components\TextInput::make('latitude')
                             ->required()
                             ->numeric()
                             ->placeholder('e.g. -6.7924')
-                            ->helperText('GPS latitude coordinate (decimal format)'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'GPS latitude coordinate (decimal format)' : null),
 
                         Forms\Components\TextInput::make('longitude')
                             ->required()
                             ->numeric()
                             ->placeholder('e.g. 39.2083')
-                            ->helperText('GPS longitude coordinate (decimal format)'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'GPS longitude coordinate (decimal format)' : null),
                     ]),
 
                 Forms\Components\Section::make('Collection Information')
@@ -139,13 +139,13 @@ class CollectionPointResource extends Resource
                             ])
                             ->native(false)
                             ->placeholder('Select type of structure')
-                            ->helperText('Physical type of the collection point'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Physical type of the collection point' : null),
 
                         Forms\Components\TextInput::make('household_size')
                             ->required()
                             ->numeric()
                             ->placeholder('e.g. 150')
-                            ->helperText('Approximate number of households served'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Approximate number of households served' : null),
 
                         Forms\Components\Select::make('waste_type')
                             ->required()
@@ -159,7 +159,7 @@ class CollectionPointResource extends Resource
                             ])
                             ->native(false)
                             ->placeholder('Select waste type')
-                            ->helperText('Primary type of waste collected'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Primary type of waste collected' : null),
 
                         Forms\Components\Select::make('collection_frequency')
                             ->required()
@@ -170,13 +170,13 @@ class CollectionPointResource extends Resource
                                 'monthly' => 'Monthly',
                             ])
                             ->placeholder('Select frequency')
-                            ->helperText('How often waste is collected'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'How often waste is collected' : null),
 
                         Forms\Components\TextInput::make('bin_count')
                             ->required()
                             ->numeric()
                             ->placeholder('e.g. 4')
-                            ->helperText('Number of bins/containers at this point'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Number of bins/containers at this point' : null),
 
                         Forms\Components\Select::make('bin_type')
                             ->required()
@@ -188,7 +188,7 @@ class CollectionPointResource extends Resource
                             ])
                             ->native(false)
                             ->placeholder('Select bin material')
-                            ->helperText('Primary material of the bins'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Primary material of the bins' : null),
 
 
                     ])
@@ -213,7 +213,7 @@ class CollectionPointResource extends Resource
                             ])
                             ->columnSpanFull()
                             ->placeholder('Any special instructions or observations')
-                            ->helperText('Additional notes for collection teams'),
+                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Additional notes for collection teams' : null),
                     ]),
             ]);
     }
