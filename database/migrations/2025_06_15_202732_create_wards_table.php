@@ -21,9 +21,12 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
-            $table->foreignId('organisation_id')->constrained()->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unsignedBigInteger('organisation_id');
+            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
+
 
             // Optional index for frequently searched fields
             $table->index('name');
