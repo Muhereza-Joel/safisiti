@@ -19,4 +19,9 @@ class EditCell extends EditRecord
             Actions\RestoreAction::make(),
         ];
     }
+
+    protected function getSavedNotificationMessage(): ?string
+    {
+        return "Cell Details Updated Successfully.";
+    }
 }

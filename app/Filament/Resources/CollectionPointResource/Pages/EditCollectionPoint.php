@@ -19,4 +19,9 @@ class EditCollectionPoint extends EditRecord
             Actions\RestoreAction::make(),
         ];
     }
+
+    protected function getSavedNotificationMessage(): ?string
+    {
+        return "Collection Point Details Updated Successfully.";
+    }
 }

@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateCell extends CreateRecord
 {
     protected static string $resource = CellResource::class;
+
+    protected function getCreatedNotificationMessage(): ?string
+    {
+        return "New Cell Saved.";
+    }
 }
