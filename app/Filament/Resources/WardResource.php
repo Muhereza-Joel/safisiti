@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\WardResource\Pages;
 use App\Filament\Resources\WardResource\RelationManagers;
 use App\Models\Ward;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,7 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class WardResource extends Resource
+class WardResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Ward::class;
 
@@ -22,6 +23,26 @@ class WardResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-map';
 
     protected static ?int $navigationSort = 2;
+
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view',
+            'view_any',
+            'create',
+            'update',
+            'restore',
+            'restore_any',
+            'replicate',
+            'reorder',
+            'delete',
+            'delete_any',
+            'force_delete',
+            'force_delete_any',
+            'export_data',
+            'download_template',
+        ];
+    }
 
 
     public static function form(Form $form): Form
