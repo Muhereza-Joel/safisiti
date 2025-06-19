@@ -8,10 +8,18 @@
 
 /* Sidebar Styles */
 .fi-sidebar {
-    background-color: #121d36 !important;
+    background-color: #0d1514 !important;
 }
 .dark .fi-sidebar {
-    background-color: #131415f9 !important; /* Slightly darker in dark mode */
+    background-color: #0d1514 !important; /* Slightly darker in dark mode */
+}
+
+.fi-section {
+    background-color: #f5f7fa !important; /* Slightly darker in dark mode */
+}
+
+.dark .fi-section {
+    background-color: #0e1512 !important; /* Slightly darker in dark mode */
 }
 
 .fi-sidebar-item-label {
@@ -48,10 +56,14 @@
 
 /* Body background */
 body {
-    background-color: #e6eaee !important;
+    background-color: #f5fbfd !important;
 }
 .dark body {
-    background-color: #131415f9 !important; /* Tailwind slate-900 */
+    background-color: #0d1514 !important; /* Tailwind slate-900 */
+}
+
+main {
+    padding: 15px 20px !important;
 }
 
 /* Expired banner */
