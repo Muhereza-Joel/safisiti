@@ -62,6 +62,7 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Administrative Units',
+                'Route Mapping',
                 'User Management',
                 'Roles & Permissions'
 
