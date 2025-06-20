@@ -19,7 +19,7 @@
 }
 
 .dark .fi-section {
-    background-color: #0e1512 !important; /* Slightly darker in dark mode */
+    background-color: #1a1d23 !important; /* Slightly darker in dark mode */
 }
 
 .fi-sidebar-item-label {
@@ -59,7 +59,7 @@ body {
     background-color: #f5fbfd !important;
 }
 .dark body {
-    background-color: #0d1514 !important; /* Tailwind slate-900 */
+    background-color: #16181d !important; /* Tailwind slate-900 */
 }
 
 main {
