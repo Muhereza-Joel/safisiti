@@ -87,7 +87,17 @@ class CollectionPointResource extends Resource
                             ->relationship(
                                 name: 'ward',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn(Builder $query) => $query->where('organisation_id', auth()->user()->organisation_id)
+                                modifyQueryUsing: function ($query) {
+                                    // Only select id and name columns
+                                    $query->select('id', 'name');
+
+                                    // Apply organization filter if not Administrator
+                                    if (!auth()->user()->hasRole('System Administrator')) {
+                                        $query->where('organisation_id', auth()->user()->organisation_id);
+                                    }
+
+                                    return $query;
+                                }
                             )
                             ->required()
                             ->searchable()
