@@ -18,7 +18,7 @@ class CollectionRouteResource extends Resource
 {
     protected static ?string $model = CollectionRoute::class;
 
-    protected static ?string $navigationGroup = 'Route Mapping';
+    protected static ?string $navigationGroup = 'Route Management';
 
     protected static ?string $navigationIcon = 'heroicon-o-lifebuoy';
 

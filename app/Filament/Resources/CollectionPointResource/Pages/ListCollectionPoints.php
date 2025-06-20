@@ -22,27 +22,27 @@ class ListCollectionPoints extends ListRecords
     {
         return [
             'all' => Tab::make('All'),
-            'household' => Tab::make('Household')
+            'household' => Tab::make('Households')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'household')),
-            'market' => Tab::make('Market')
+            'market' => Tab::make('Markets')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'market')),
-            'school' => Tab::make('School')
+            'school' => Tab::make('Schools')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'school')),
-            'hospital' => Tab::make('Hospital')
+            'hospital' => Tab::make('Hospitals')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'hospital')),
-            'clinic' => Tab::make('Clinic')
+            'clinic' => Tab::make('Clinics')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'clinic')),
-            'restaurant' => Tab::make('Restaurant')
+            'restaurant' => Tab::make('Restaurants')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'restaurant')),
-            'hotel' => Tab::make('Hotel')
+            'hotel' => Tab::make('Hotels')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'hotel')),
-            'office' => Tab::make('Office')
+            'office' => Tab::make('Offices')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'office')),
-            'shop' => Tab::make('Shop')
+            'shop' => Tab::make('Shops')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'shop')),
-            'supermarket' => Tab::make('Supermarket')
+            'supermarket' => Tab::make('Supermarkets')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'supermarket')),
-            'other' => Tab::make('Other')
+            'other' => Tab::make('Others')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'other')),
         ];
     }
