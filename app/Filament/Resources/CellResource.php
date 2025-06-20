@@ -43,16 +43,24 @@ class CellResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('ward_id')
                             ->label('Ward')
-                            ->placeholder('Select the relevant ward')
-                            ->helperText(fn() => $form->getOperation() !== 'view' ? 'Only wards within your organization are listed.' : null)
                             ->relationship(
                                 name: 'ward',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn($query) => $query->where('organisation_id', Auth::user()->organisation_id)
+                                modifyQueryUsing: function ($query) {
+                                    // Only select id and name columns
+                                    $query->select('id', 'name');
+
+                                    // Apply organization filter if not Administrator
+                                    if (!auth()->user()->hasRole('System Administrator')) {
+                                        $query->where('organisation_id', Auth::user()->organisation_id);
+                                    }
+
+                                    return $query;
+                                }
                             )
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
                     ]),
             ]);
     }
@@ -65,6 +73,7 @@ class CellResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('ward.name')
                     ->numeric()
+                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('deleted_at')
@@ -80,6 +89,7 @@ class CellResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->striped()
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
@@ -115,9 +125,16 @@ class CellResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return $query;
     }
 }

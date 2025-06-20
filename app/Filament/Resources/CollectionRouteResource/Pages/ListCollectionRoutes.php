@@ -14,10 +14,7 @@ class ListCollectionRoutes extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
-            Actions\Action::make('viewGraph')
-                ->label('View Graph')
-                ->icon('heroicon-o-chart-bar')
-                ->url(CollectionRouteResource::getUrl('graph')),
+
 
         ];
     }

@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class WardResource extends Resource implements HasShieldPermissions
 {
@@ -134,15 +135,14 @@ class WardResource extends Resource implements HasShieldPermissions
                     ->sortable()
                     ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('area_sq_km')
+                    ->label('Area in sq km')
                     ->numeric()
                     ->sortable()
                     ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('latitude')
-                    ->numeric()
                     ->sortable()
                     ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('longitude')
-                    ->numeric()
                     ->sortable()
                     ->placeholder('N/A'),
 
@@ -162,6 +162,7 @@ class WardResource extends Resource implements HasShieldPermissions
             ->filters([
                 Tables\Filters\TrashedFilter::make()
             ])
+            ->striped()
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -194,9 +195,16 @@ class WardResource extends Resource implements HasShieldPermissions
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return $query;
     }
 }

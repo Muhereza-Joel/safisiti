@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Enums\FiltersLayout;
+use Illuminate\Database\Eloquent\Model;
 
 class CollectionPointResource extends Resource
 {
@@ -224,54 +226,62 @@ class CollectionPointResource extends Resource
             ->columns([
 
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('category')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('head_name')
+                    ->placeholder('N/A')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('ward.name')
+                    ->placeholder('N/A')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cell.name')
+                    ->placeholder('N/A')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('latitude')
+                    ->placeholder('N/A')
                     ->numeric()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('longitude')
+                    ->placeholder('N/A')
                     ->numeric()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('structure_type')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('household_size')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('waste_type')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('collection_frequency')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('bin_count')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('bin_type')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('last_collection_date')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('N/A')
                     ->date()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('deleted_at')
+                    ->placeholder('N/A')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -285,8 +295,32 @@ class CollectionPointResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('waste_type')
+                    ->label('Waste Type')
+                    ->options([
+                        'domestic' => 'Mixed Waste',
+                        'commercial' => 'Commercial',
+                        'organic' => 'Organic Only',
+                        'recyclable' => 'Recyclable Only',
+                        'hazardous' => 'Hazardous Waste',
+                        'mixed' => 'Mixed',
+                    ])
+                    ->searchable(),
+
+                Tables\Filters\SelectFilter::make('collection_frequency')
+                    ->label('Collection Frequency')
+                    ->options([
+                        'daily' => 'Daily',
+                        'weekly' => 'Weekly',
+                        'biweekly' => 'Bi-Weekly',
+                        'monthly' => 'Monthly',
+                    ])
+                    ->searchable(),
+
+
                 Tables\Filters\TrashedFilter::make(),
-            ])
+            ], layout: FiltersLayout::AboveContent)
+            ->striped()
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -297,7 +331,12 @@ class CollectionPointResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])->recordClasses(function (Model $record) {
+                return $record->category
+                    ? 'record-' . $record->category
+                    : '';
+            })
+        ;
     }
 
     public static function getRelations(): array
@@ -319,9 +358,16 @@ class CollectionPointResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', auth()->user()->organisation_id);
+        }
+
+        return $query;
     }
 }

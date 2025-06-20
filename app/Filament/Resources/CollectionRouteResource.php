@@ -146,6 +146,10 @@ class CollectionRouteResource extends Resource
                     ->sortable()
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('wards_count')
+                    ->label('Wards')
+                    ->counts('wards') // this will auto-load the count
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
@@ -194,7 +198,6 @@ class CollectionRouteResource extends Resource
     public static function getPages(): array
     {
         return [
-            'graph' => Pages\RouteWardGraph::route('/graph'),
             'index' => Pages\ListCollectionRoutes::route('/'),
             'create' => Pages\CreateCollectionRoute::route('/create'),
             'view' => Pages\ViewCollectionRoute::route('/{record}'),
@@ -205,9 +208,16 @@ class CollectionRouteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', auth()->user()->organisation_id);
+        }
+
+        return $query;
     }
 }
