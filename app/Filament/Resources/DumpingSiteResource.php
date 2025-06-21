@@ -87,11 +87,27 @@ class DumpingSiteResource extends Resource
                 Tables\Columns\TextColumn::make('location')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('latitude')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(
+                        decimalPlaces: 4,
+                        decimalSeparator: '.',
+                        thousandsSeparator: ''
+                    )
+                    ->sortable()
+                    ->formatStateUsing(
+                        fn($state): string =>
+                        is_numeric($state) ? number_format((float)$state, 4) : $state
+                    ),
                 Tables\Columns\TextColumn::make('longitude')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(
+                        decimalPlaces: 4,
+                        decimalSeparator: '.',
+                        thousandsSeparator: ''
+                    )
+                    ->sortable()
+                    ->formatStateUsing(
+                        fn($state): string =>
+                        is_numeric($state) ? number_format((float)$state, 4) : $state
+                    ),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
@@ -140,9 +156,16 @@ class DumpingSiteResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', auth()->user()->organisation_id);
+        }
+
+        return $query;
     }
 }
