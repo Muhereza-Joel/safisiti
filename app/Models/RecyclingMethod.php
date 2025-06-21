@@ -13,7 +13,7 @@ class RecyclingMethod extends Model
 {
     use HasFactory, SoftDeletes, Cachable;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['uuid', 'name', 'description', 'organisation_id'];
 
     public function getRouteKeyName(): string
     {
