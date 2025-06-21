@@ -68,4 +68,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Organisation::class);
     }
+
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
 }
