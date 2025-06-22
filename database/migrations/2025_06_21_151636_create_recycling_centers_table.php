@@ -15,7 +15,10 @@ return new class extends Migration {
             $table->decimal('latitude', 10, 8);
             $table->decimal('longitude', 11, 8);
             $table->text('description')->nullable();
-            $table->foreignId('organisation_id')->nullable()->constrained()->nullOnDelete();
+
+            // Reference without foreign key constraint
+            $table->unsignedBigInteger('organisation_id')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
         });

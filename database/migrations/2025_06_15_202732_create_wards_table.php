@@ -24,9 +24,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unsignedBigInteger('organisation_id');
-            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
-
+            // Referencing organisation without a foreign key constraint
+            $table->unsignedBigInteger('organisation_id')->nullable();
 
             // Optional index for frequently searched fields
             $table->index('name');

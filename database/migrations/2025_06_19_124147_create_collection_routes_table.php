@@ -19,20 +19,24 @@ return new class extends Migration
             $table->time('end_time');
             $table->enum('status', ['active', 'inactive', 'pending'])->default('active');
             $table->text('notes')->nullable();
-            $table->foreignId('organisation_id')->constrained()->onDelete('cascade');
+
+            // Reference without foreign key constraint
+            $table->unsignedBigInteger('organisation_id')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
         });
 
-        // Pivot table for route-ward relationship
+        // Pivot table for route-ward relationship (no foreign key constraints)
         Schema::create('collection_route_ward', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('collection_route_id')->constrained()->onDelete('cascade');
-            $table->foreignId('ward_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('collection_route_id')->nullable();
+            $table->unsignedBigInteger('ward_id')->nullable();
             $table->integer('collection_order')->nullable(); // Optional: to specify order of collection
             $table->timestamps();
 
-            $table->unique(['collection_route_id', 'ward_id']); // Prevent duplicate relationships
+            // Prevent duplicate relationships
+            $table->unique(['collection_route_id', 'ward_id']);
         });
     }
 

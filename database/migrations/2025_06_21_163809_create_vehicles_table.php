@@ -15,8 +15,11 @@ return new class extends Migration {
             $table->string('capacity')->nullable();           // e.g., "5 tons"
             $table->string('type')->nullable();               // e.g., "Garbage Truck"
             $table->text('description')->nullable();
-            $table->foreignId('user_id')->constrained()->nullOnDelete();          // Vehicle assigned to a user
-            $table->foreignId('organisation_id')->nullable()->constrained()->nullOnDelete();
+
+            // Reference columns without foreign key constraints
+            $table->unsignedBigInteger('user_id')->nullable();           // Vehicle assigned to a user
+            $table->unsignedBigInteger('organisation_id')->nullable();   // Organisation that owns the vehicle
+
             $table->softDeletes(); // Soft delete support
             $table->timestamps();
         });

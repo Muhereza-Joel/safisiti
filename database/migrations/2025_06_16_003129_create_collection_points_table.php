@@ -19,8 +19,12 @@ return new class extends Migration
             $table->string('head_name');
             $table->string('phone');
             $table->string('email')->nullable();
-            $table->unsignedBigInteger('ward_id');
-            $table->unsignedBigInteger('cell_id');
+
+            // Reference IDs (no foreign key constraints)
+            $table->unsignedBigInteger('ward_id')->nullable();
+            $table->unsignedBigInteger('cell_id')->nullable();
+            $table->unsignedBigInteger('organisation_id')->nullable();
+
             $table->text('address');
             $table->decimal('latitude', 10, 8);
             $table->decimal('longitude', 11, 8);
@@ -32,14 +36,9 @@ return new class extends Migration
             $table->string('bin_type');
             $table->date('last_collection_date')->nullable();
             $table->text('notes')->nullable();
-            $table->unsignedBigInteger('organisation_id');
+
             $table->softDeletes();
             $table->timestamps();
-
-            // Foreign keys
-            $table->foreign('ward_id')->references('id')->on('wards')->onDelete('cascade');
-            $table->foreign('cell_id')->references('id')->on('cells')->onDelete('cascade');
-            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
 
             // Indexes
             $table->index(['ward_id', 'cell_id']);

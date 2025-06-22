@@ -15,15 +15,15 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid');
             $table->string('name');
-            $table->unsignedBigInteger('ward_id');
-            $table->unsignedBigInteger('organisation_id');
+
+            // Reference IDs without foreign key constraints
+            $table->unsignedBigInteger('ward_id')->nullable();
+            $table->unsignedBigInteger('organisation_id')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign('ward_id')->references('id')->on('wards')->onDelete('cascade');
-            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
-
-            // Add composite unique index for ward_id + name
+            // Composite unique index for ward_id + name
             $table->unique(['ward_id', 'name']);
         });
     }
