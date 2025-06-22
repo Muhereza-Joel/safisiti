@@ -98,10 +98,10 @@ class VehicleResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Service Provider')
+                    ->searchable()
                     ->sortable(),
-
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
