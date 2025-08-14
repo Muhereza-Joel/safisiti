@@ -21,7 +21,7 @@ class AssignWards extends Page
     public CollectionRoute $record;
     public array $wardAssignment = [];
     public array $availableWards = [];
-    public array $selectedWards = [];
+    public ?string $newWard = null;
     public ?string $newOrder = null;
 
     public function mount(CollectionRoute $record): void
@@ -32,19 +32,15 @@ class AssignWards extends Page
 
     protected function loadWardData(): void
     {
-        // Load wards and their order; treat null order as large number to sort last
         $assignments = $this->record->wards()
             ->get()
             ->mapWithKeys(function ($ward) {
-                $order = $ward->pivot->collection_order;
-                return [$ward->id => $order === null ? PHP_INT_MAX : $order];
+                return [$ward->id => $ward->pivot->collection_order];
             })
-            ->sort()
             ->toArray();
 
         $this->wardAssignment = $assignments;
 
-        // Load available wards from same organisation excluding assigned
         $this->availableWards = Ward::query()
             ->where('organisation_id', $this->record->organisation_id)
             ->whereNotIn('id', array_keys($this->wardAssignment))
@@ -52,98 +48,39 @@ class AssignWards extends Page
             ->toArray();
     }
 
-    public function saveAssignments(): void
-    {
-        try {
-            // Normalize orders: reindex from 1, keep relative order, nulls stay null
-            $orders = array_filter($this->wardAssignment, fn($order) => $order !== null && $order !== 0);
-            $sortedOrders = collect($orders)->sort()->values()->toArray();
-
-            $newAssignments = [];
-            $i = 1;
-            foreach ($this->wardAssignment as $wardId => $order) {
-                if ($order === null || $order == 0) {
-                    $newAssignments[$wardId] = null;
-                } else {
-                    $newAssignments[$wardId] = $i++;
-                }
-            }
-
-            DB::transaction(function () use ($newAssignments) {
-                $this->record->wards()->detach();
-
-                foreach ($newAssignments as $wardId => $order) {
-                    $this->record->wards()->attach($wardId, [
-                        'collection_order' => $order,
-                    ]);
-                }
-            });
-
-            $this->loadWardData();
-
-            Notification::make()
-                ->title('Wards assigned successfully')
-                ->success()
-                ->body('The ward assignments have been updated for this route.')
-                ->send();
-        } catch (\Throwable $e) {
-            logger()->error('Failed to save ward assignments', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            Notification::make()
-                ->title('Failed to save assignments')
-                ->danger()
-                ->body('An unexpected error occurred. Please try again.')
-                ->send();
-        }
-    }
-
     public function addWards(): void
     {
         $this->validate([
-            'selectedWards' => ['required', 'array'],
-            'selectedWards.*' => ['exists:wards,id'],
+            'newWard' => ['required', 'exists:wards,id'],
             'newOrder' => ['nullable', 'numeric', 'min:1'],
         ]);
 
-        $wards = Ward::whereIn('id', $this->selectedWards)
+        $ward = Ward::where('id', $this->newWard)
             ->where('organisation_id', $this->record->organisation_id)
-            ->get();
+            ->first();
 
-        // Determine starting order if none given
-        $maxOrder = empty($this->wardAssignment) ? 0 : max(array_filter($this->wardAssignment, fn($o) => $o !== null));
+        if (!$ward) {
+            Notification::make()
+                ->title('Invalid ward')
+                ->danger()
+                ->body('The selected ward is not valid for this route.')
+                ->send();
+            return;
+        }
 
-        $order = $this->newOrder ?? ($maxOrder + 1);
-
-        $added = [];
-
-        foreach ($wards as $ward) {
-            if (!isset($this->wardAssignment[$ward->id])) {
-                $this->wardAssignment[$ward->id] = $order++;
-                $added[] = $ward->name;
-            }
+        if (!isset($this->wardAssignment[$ward->id])) {
+            $order = $this->newOrder ?? (count($this->wardAssignment) + 1);
+            $this->wardAssignment[$ward->id] = $order;
             unset($this->availableWards[$ward->id]);
         }
 
-        $this->reset(['selectedWards', 'newOrder']);
+        $this->reset(['newWard', 'newOrder']);
 
-        $this->loadWardData();
-
-        if (!empty($added)) {
-            Notification::make()
-                ->title('Wards added')
-                ->success()
-                ->body('Added: ' . implode(', ', $added))
-                ->send();
-        } else {
-            Notification::make()
-                ->title('No wards added')
-                ->warning()
-                ->body('No new wards were added. They might already be assigned or invalid.')
-                ->send();
-        }
+        Notification::make()
+            ->title('Ward added')
+            ->success()
+            ->body("{$ward->name} has been added to the route.")
+            ->send();
     }
 
     public function removeWard($wardId): void
@@ -161,6 +98,62 @@ class AssignWards extends Page
             ->body("{$ward->name} has been removed from the route.")
             ->send();
     }
+
+    public function saveAssignments(): void
+    {
+        try {
+            if (empty($this->wardAssignment)) {
+                throw new \Exception('No ward assignments to save');
+            }
+
+            $orders = [];
+            $currentOrder = 1;
+
+            $sortedAssignments = collect($this->wardAssignment)
+                ->sortBy(fn($order) => $order === null ? PHP_INT_MAX : $order);
+
+            foreach ($sortedAssignments as $wardId => $order) {
+                $orders[$wardId] = $order === null ? null : $currentOrder++;
+            }
+
+            DB::transaction(function () use ($orders) {
+                $this->record->wards()->sync([]);
+
+                foreach ($orders as $wardId => $order) {
+                    $ward = Ward::find($wardId); // ✅ Load ward to get uuid
+
+                    if (!$ward) {
+                        throw new \Exception("Ward with ID {$wardId} not found.");
+                    }
+
+                    $this->record->wards()->attach($wardId, [
+                        'collection_order'      => $order,
+                        'collection_route_uuid' => $this->record->uuid,
+                        'ward_uuid'             => $ward->uuid,
+                    ]);
+                }
+            });
+
+            $this->loadWardData();
+
+            Notification::make()
+                ->title('Wards assigned successfully')
+                ->success()
+                ->body('The ward assignments have been updated for this route.')
+                ->send();
+        } catch (\Throwable $e) {
+            logger()->error('Failed to save ward assignments', [
+                'error' => $e->getMessage(),
+            ]);
+
+            Notification::make()
+                ->title('Failed to save assignments')
+                ->danger()
+                ->body($e->getMessage())
+                ->send();
+        }
+    }
+
 
     public function getBreadcrumbs(): array
     {

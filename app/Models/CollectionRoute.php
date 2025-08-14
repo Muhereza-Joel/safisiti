@@ -52,7 +52,7 @@ class CollectionRoute extends Model
     public function wards()
     {
         return $this->belongsToMany(Ward::class, 'collection_route_ward')
-            ->withPivot('collection_order')
+            ->withPivot('collection_order', 'collection_route_uuid', 'ward_uuid')
             ->withTimestamps();
     }
 

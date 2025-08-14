@@ -12,7 +12,9 @@
 
         <!-- Current Assignments Section -->
         <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h3 class="text-lg font-medium mb-4">Current Wards On Route ({{ count($wardAssignment) }})</h3>
+            <h3 class="text-lg font-medium mb-4">
+                Current Wards On Route ({{ count($wardAssignment) }})
+            </h3>
 
             @if(count($wardAssignment) > 0)
             <div class="space-y-2">
@@ -50,7 +52,7 @@
 
         <!-- Add New Wards Section -->
         <div class="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
-            <h3 class="text-lg font-medium mb-4">Add Ward(s) to Route</h3>
+            <h3 class="text-lg font-medium mb-4">Add Ward to Route</h3>
             <div class="flex flex-col md:flex-row gap-4 items-center">
                 <div class="flex-1">
                     <x-filament::input.select wire:model="newWard">
