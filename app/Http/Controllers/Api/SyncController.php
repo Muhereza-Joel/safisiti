@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BugReport;
+use App\Models\Cell;
 use App\Models\CollectionRoute;
 use App\Models\CollectionRouteWard;
 use App\Models\Contact;
@@ -26,7 +27,8 @@ class SyncController extends Controller
         'bug_reports' => BugReport::class,
         'collection_routes' => CollectionRoute::class,
         'wards' => Ward::class,
-        'collection_route_ward' => CollectionRouteWard::class
+        'collection_route_ward' => CollectionRouteWard::class,
+        'cells' => Cell::class,
     ];
 
     public function syncPull(Request $request)
@@ -35,12 +37,11 @@ class SyncController extends Controller
         $lastSyncTime = $lastPulledAt ? Carbon::createFromTimestampMs($lastPulledAt, 'UTC') : null;
         Log::info("Sync pull requested", ['last_pulled_at' => $lastPulledAt]);
 
-        $knownRecords = json_decode($request->input('known_records', '{}'), true);
         $changes = [];
 
         foreach ($this->syncableModels as $table => $model) {
             $changes[$table] = $lastSyncTime
-                ? $this->syncPullIncremental($model, $table, $request, $lastSyncTime, $knownRecords)
+                ? $this->syncPullIncremental($model, $table, $request, $lastSyncTime)
                 : $this->syncPullFirstTime($model, $request);
         }
 
@@ -49,6 +50,7 @@ class SyncController extends Controller
             'timestamp' => now()->timestamp * 1000,
         ]);
     }
+
 
     protected function syncPullFirstTime($model, Request $request)
     {
@@ -61,28 +63,30 @@ class SyncController extends Controller
         ];
     }
 
-    protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime, $knownRecords)
+    protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
     {
         $query = $this->applyScopes($model, $request);
-        $knownIds = $knownRecords[$table] ?? [];
 
-        $changedRecords = (clone $query)
-            ->where(function ($q) use ($lastSyncTime, $knownIds) {
+        // Fetch updated or newly created since last sync
+        $updatedRecords = (clone $query)
+            ->where(function ($q) use ($lastSyncTime) {
                 $q->where('created_at', '>', $lastSyncTime)
-                    ->orWhere('updated_at', '>', $lastSyncTime)
-                    ->orWhere(function ($q) use ($lastSyncTime, $knownIds) {
-                        $q->where('created_at', '<=', $lastSyncTime)
-                            ->whereNotIn('id', $knownIds);
-                    });
+                    ->orWhere('updated_at', '>', $lastSyncTime);
             })
             ->get();
 
+        // Fetch deleted records if model uses SoftDeletes
+        $deletedRecords = $this->getDeletedRecords($model, $query, $lastSyncTime);
+
         return [
+            // Since we’re not tracking known records, everything from this query is "updated"
+            // Client side will handle whether it's a create or update
             'created' => collect(),
-            'updated' => $changedRecords,
-            'deleted' => $this->getDeletedRecords($model, $query, $lastSyncTime),
+            'updated' => $updatedRecords,
+            'deleted' => $deletedRecords,
         ];
     }
+
 
     protected function applyScopes($model, Request $request)
     {
