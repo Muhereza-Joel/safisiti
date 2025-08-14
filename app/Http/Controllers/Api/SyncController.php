@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BugReport;
 use App\Models\CollectionRoute;
+use App\Models\CollectionRouteWard;
 use App\Models\Contact;
 use App\Models\Preference;
 use App\Models\User;
 use App\Models\Ward;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +26,7 @@ class SyncController extends Controller
         'bug_reports' => BugReport::class,
         'collection_routes' => CollectionRoute::class,
         'wards' => Ward::class,
+        'collection_route_ward' => CollectionRouteWard::class
     ];
 
     public function syncPull(Request $request)
@@ -63,7 +66,6 @@ class SyncController extends Controller
         $query = $this->applyScopes($model, $request);
         $knownIds = $knownRecords[$table] ?? [];
 
-        // For WatermelonDB with sendCreatedAsUpdated: true, we combine created and updated
         $changedRecords = (clone $query)
             ->where(function ($q) use ($lastSyncTime, $knownIds) {
                 $q->where('created_at', '>', $lastSyncTime)
@@ -76,15 +78,15 @@ class SyncController extends Controller
             ->get();
 
         return [
-            'created' => collect(), // Empty for sendCreatedAsUpdated
-            'updated' => $changedRecords, // All changes go here
+            'created' => collect(),
+            'updated' => $changedRecords,
             'deleted' => $this->getDeletedRecords($model, $query, $lastSyncTime),
         ];
     }
 
     protected function applyScopes($model, Request $request)
     {
-        $query = $model::query();
+        $query = $this->queryFor($model);
 
         if (Schema::hasColumn((new $model)->getTable(), 'user_id')) {
             $query->where('user_id', $request->user()->id);
@@ -98,13 +100,12 @@ class SyncController extends Controller
 
     protected function getDeletedRecords($model, $query, $lastSyncTime)
     {
-        if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses($model))) {
+        if ($this->modelUsesSoftDeletes($model)) {
             return (clone $query)
                 ->onlyTrashed()
                 ->where('deleted_at', '>', $lastSyncTime)
                 ->pluck('id');
         }
-
         return collect();
     }
 
@@ -120,13 +121,12 @@ class SyncController extends Controller
 
                 $model = $this->syncableModels[$table];
 
-                // Process all changes (created/updated treated the same way)
                 foreach (array_merge($data['created'] ?? [], $data['updated'] ?? []) as $record) {
                     $this->syncRecord($model, $record, $request);
                 }
 
                 foreach ($data['deleted'] ?? [] as $id) {
-                    $model::where('id', $id)->delete();
+                    $this->deleteRecord($model, $id);
                 }
             }
         });
@@ -134,43 +134,61 @@ class SyncController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
-    protected function syncRecord($model, $record, Request $request)
+    protected function syncRecord($modelClass, $record, Request $request)
     {
-        $existing = $model::withTrashed()->where('uuid', $record['uuid'] ?? null)->first();
+        // Use withTrashed only if model supports it
+        if (in_array(SoftDeletes::class, class_uses($modelClass))) {
+            $existing = $modelClass::withTrashed()->where('uuid', $record['uuid'] ?? null)->first();
+        } else {
+            $existing = $modelClass::where('uuid', $record['uuid'] ?? null)->first();
+        }
+
+        // Convert timestamp to Carbon
         $clientUpdatedAt = isset($record['updated_at'])
             ? Carbon::createFromTimestampMs($record['updated_at'], 'UTC')
             : null;
 
-        $recordData = $this->mapRecordFields($record, $model);
+        $recordData = $this->mapRecordFields($record, $modelClass);
 
-        // Security: Never allow these fields to be updated from client
-        unset(
-            $recordData['organisation_id'],
-            $recordData['user_id'],
-            $recordData['password'],
-            $recordData['password_confirmation']
-        );
+        // Never allow client to overwrite these IDs
+        unset($recordData['organisation_id'], $recordData['user_id'], $recordData['password'], $recordData['password_confirmation']);
 
         if ($existing) {
+            // Server wins if more recent
             if ($clientUpdatedAt && $existing->updated_at > $clientUpdatedAt) {
-                return; // Server wins in conflict
+                return $existing;
             }
 
-            if ($existing->trashed() && method_exists($existing, 'restore')) {
+            // Restore soft-deleted record if needed
+            if (in_array(SoftDeletes::class, class_uses($modelClass)) && $existing->trashed()) {
                 $existing->restore();
             }
 
             $existing->fill($recordData)->save();
-        } elseif (isset($record['uuid'])) {
-            // For new records, set protected fields from authenticated user
-            if (Schema::hasColumn((new $model)->getTable(), 'user_id')) {
+            return $existing;
+        }
+
+        // Create new record
+        if (isset($record['uuid'])) {
+            if (Schema::hasColumn((new $modelClass)->getTable(), 'user_id')) {
                 $recordData['user_id'] = $request->user()->id;
             }
-            if (Schema::hasColumn((new $model)->getTable(), 'organisation_id')) {
+            if (Schema::hasColumn((new $modelClass)->getTable(), 'organisation_id')) {
                 $recordData['organisation_id'] = $request->user()->organisation_id;
             }
 
-            $model::create($recordData);
+            return $modelClass::create($recordData);
+        }
+
+        return null;
+    }
+
+    protected function deleteRecord($model, $id)
+    {
+        if ($this->modelUsesSoftDeletes($model)) {
+            $model::where('id', $id)->delete();
+        } else {
+            $model::where('id', $id)->forceDelete();
         }
     }
 
@@ -201,5 +219,23 @@ class SyncController extends Controller
         return collect($record)
             ->except($excludedFields)
             ->toArray();
+    }
+
+    /**
+     * Get query builder for the model, including trashed records if supported.
+     */
+    protected function queryFor($model)
+    {
+        return $this->modelUsesSoftDeletes($model)
+            ? $model::withTrashed()
+            : $model::query();
+    }
+
+    /**
+     * Check if the given model uses SoftDeletes
+     */
+    protected function modelUsesSoftDeletes($model): bool
+    {
+        return in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses($model));
     }
 }
