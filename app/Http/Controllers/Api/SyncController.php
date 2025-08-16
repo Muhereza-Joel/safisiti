@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BugReport;
 use App\Models\Cell;
+use App\Models\CollectionPoint;
 use App\Models\CollectionRoute;
 use App\Models\CollectionRouteWard;
 use App\Models\Contact;
 use App\Models\Preference;
+use App\Models\RecyclingMethod;
 use App\Models\User;
 use App\Models\Ward;
+use App\Models\WasteType;
+use App\Models\DumpingSite;
+use App\Models\RecyclingCenter;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -29,6 +34,11 @@ class SyncController extends Controller
         'wards' => Ward::class,
         'collection_route_ward' => CollectionRouteWard::class,
         'cells' => Cell::class,
+        'collection_points' => CollectionPoint::class,
+        'waste_types' => WasteType::class,
+        'recycling_methods' => RecyclingMethod::class,
+        'dumping_sites' => DumpingSite::class,
+        'recycling_centers' => RecyclingCenter::class
     ];
 
     public function syncPull(Request $request)
@@ -54,38 +64,62 @@ class SyncController extends Controller
 
     protected function syncPullFirstTime($model, Request $request)
     {
-        $query = $this->applyScopes($model, $request);
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 500);
+
+        $query = $this->applyScopes($model, $request)
+            ->select((new $model)->getFillable())
+            ->orderBy('updated_at', 'asc') // Consistent sorting
+            ->orderBy('id', 'asc');       // Secondary sort for stability
+
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'created' => $query->get(),
-            'updated' => collect(),
+            'created' => collect(),
+            'updated' => $paginated->items(),
             'deleted' => collect(),
+            'has_more' => $paginated->hasMorePages(),
+            'current_page' => $paginated->currentPage(),
         ];
     }
 
     protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
     {
-        $query = $this->applyScopes($model, $request);
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 500);
 
-        // Fetch updated or newly created since last sync
-        $updatedRecords = (clone $query)
-            ->where(function ($q) use ($lastSyncTime) {
-                $q->where('created_at', '>', $lastSyncTime)
-                    ->orWhere('updated_at', '>', $lastSyncTime);
-            })
-            ->get();
+        $allUpdated = collect();
+        $allDeleted = collect();
+        $hasMore = true;
 
-        // Fetch deleted records if model uses SoftDeletes
-        $deletedRecords = $this->getDeletedRecords($model, $query, $lastSyncTime);
+        while ($hasMore) {
+            $query = $this->applyScopes($model, $request);
+
+            // Fetch updated or newly created since last sync
+            $updatedRecords = (clone $query)
+                ->where(function ($q) use ($lastSyncTime) {
+                    $q->where('created_at', '>', $lastSyncTime)
+                        ->orWhere('updated_at', '>', $lastSyncTime);
+                })
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $allUpdated = $allUpdated->merge($updatedRecords->items());
+
+            // Fetch deleted records if model uses SoftDeletes
+            $deletedRecords = $this->getDeletedRecords($model, $query, $lastSyncTime);
+            $allDeleted = $allDeleted->merge($deletedRecords);
+
+            $hasMore = $updatedRecords->hasMorePages();
+            $page++;
+        }
 
         return [
-            // Since we’re not tracking known records, everything from this query is "updated"
-            // Client side will handle whether it's a create or update
-            'created' => collect(),
-            'updated' => $updatedRecords,
-            'deleted' => $deletedRecords,
+            'created' => collect(),    // keep empty for sendCreatedAsUpdated
+            'updated' => $allUpdated,
+            'deleted' => $allDeleted,
         ];
     }
+
 
 
     protected function applyScopes($model, Request $request)
