@@ -22,7 +22,8 @@ class CollectionRoute extends Model
         'end_time',
         'status',
         'notes',
-        'organisation_id'
+        'organisation_id',
+        'organisation_uuid',
     ];
 
     protected $casts = [
@@ -45,6 +46,11 @@ class CollectionRoute extends Model
 
             if (empty($model->organisation_id) && Auth::check()) {
                 $model->organisation_id = Auth::user()->organisation_id;
+            }
+
+            // Get the organisation UUID from current user and attach it
+            if (Auth::check() && empty($model->organisation_uuid)) {
+                $model->organisation_uuid = Auth::user()->organisation?->uuid;
             }
         });
     }

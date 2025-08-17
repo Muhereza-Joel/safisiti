@@ -20,7 +20,9 @@ class CollectionPoint extends Model
         'phone',
         'email',
         'ward_id',
+        'ward_uuid',
         'cell_id',
+        'cell_uuid',
         'address',
         'latitude',
         'longitude',
@@ -32,7 +34,8 @@ class CollectionPoint extends Model
         'bin_type',
         'last_collection_date',
         'notes',
-        'organisation_id'
+        'organisation_id',
+        'organisation_uuid'
     ];
 
     protected $casts = [
@@ -59,6 +62,21 @@ class CollectionPoint extends Model
 
             if (empty($model->organisation_id) && Auth::check()) {
                 $model->organisation_id = Auth::user()->organisation_id;
+            }
+
+            // If ward_id exists, get its UUID and attach it
+            if (!empty($model->ward_id)) {
+                $model->ward_uuid = Ward::find($model->ward_id)?->uuid;
+            }
+
+            // If cell_id exists, get its UUID and attach it
+            if (!empty($model->cell_id)) {
+                $model->cell_uuid = Cell::find($model->cell_id)?->uuid;
+            }
+
+            // Get the organisation UUID from current user and attach it
+            if (Auth::check() && empty($model->organisation_uuid)) {
+                $model->organisation_uuid = Auth::user()->organisation?->uuid;
             }
         });
     }

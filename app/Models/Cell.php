@@ -16,7 +16,9 @@ class Cell extends Model
         'uuid',
         'name',
         'ward_id',
-        'organisation_id'
+        'ward_uuid',
+        'organisation_id',
+        'organisation_uuid'
     ];
 
     public function getRouteKeyName(): string
@@ -35,6 +37,16 @@ class Cell extends Model
             // Set organisation_id from authenticated user if not already set
             if (empty($model->organisation_id) && Auth::check()) {
                 $model->organisation_id = Auth::user()->organisation_id;
+            }
+
+            // If ward_id exists, get its UUID and attach it
+            if (!empty($model->ward_id)) {
+                $model->ward_uuid = Ward::find($model->ward_id)?->uuid;
+            }
+
+            // Get the organisation UUID from current user and attach it
+            if (Auth::check() && empty($model->organisation_uuid)) {
+                $model->organisation_uuid = Auth::user()->organisation?->uuid;
             }
         });
     }

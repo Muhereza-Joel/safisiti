@@ -45,14 +45,29 @@ class SyncController extends Controller
     {
         $lastPulledAt = $request->input('last_pulled_at');
         $lastSyncTime = $lastPulledAt ? Carbon::createFromTimestampMs($lastPulledAt, 'UTC') : null;
-        Log::info("Sync pull requested", ['last_pulled_at' => $lastPulledAt]);
+        $requestedTable = $request->input('table');
+
+        Log::info("Sync pull requested", [
+            'last_pulled_at' => $lastPulledAt,
+            'table' => $requestedTable
+        ]);
 
         $changes = [];
 
-        foreach ($this->syncableModels as $table => $model) {
-            $changes[$table] = $lastSyncTime
-                ? $this->syncPullIncremental($model, $table, $request, $lastSyncTime)
+        // Handle table-specific request
+        if ($requestedTable && isset($this->syncableModels[$requestedTable])) {
+            $model = $this->syncableModels[$requestedTable];
+            $changes[$requestedTable] = $lastSyncTime
+                ? $this->syncPullIncremental($model, $requestedTable, $request, $lastSyncTime)
                 : $this->syncPullFirstTime($model, $request);
+        }
+        // Full sync for all tables
+        else {
+            foreach ($this->syncableModels as $table => $model) {
+                $changes[$table] = $lastSyncTime
+                    ? $this->syncPullIncremental($model, $table, $request, $lastSyncTime)
+                    : $this->syncPullFirstTime($model, $request);
+            }
         }
 
         return response()->json([
@@ -67,10 +82,15 @@ class SyncController extends Controller
         $page = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 500);
 
+        Log::info("First-time sync for table: " . (new $model)->getTable(), [
+            'page' => $page,
+            'per_page' => $perPage
+        ]);
+
         $query = $this->applyScopes($model, $request)
             ->select((new $model)->getFillable())
-            ->orderBy('updated_at', 'asc') // Consistent sorting
-            ->orderBy('id', 'asc');       // Secondary sort for stability
+            ->orderBy('updated_at', 'asc')
+            ->orderBy('id', 'asc');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -83,43 +103,33 @@ class SyncController extends Controller
         ];
     }
 
+
     protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
     {
-        $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 500);
+        Log::info("Sync incremental called");
+        $query = $this->applyScopes($model, $request)
+            ->where(function ($q) use ($lastSyncTime) {
+                $q->where('created_at', '>', $lastSyncTime)
+                    ->orWhere('updated_at', '>', $lastSyncTime);
+            });
 
-        $allUpdated = collect();
-        $allDeleted = collect();
-        $hasMore = true;
+        $updatedRecords = collect();
 
-        while ($hasMore) {
-            $query = $this->applyScopes($model, $request);
+        $query->orderBy('updated_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->chunk(500, function ($chunk) use (&$updatedRecords) {
+                // merge the chunk into the main collection
+                $updatedRecords = $updatedRecords->merge($chunk);
+            });
 
-            // Fetch updated or newly created since last sync
-            $updatedRecords = (clone $query)
-                ->where(function ($q) use ($lastSyncTime) {
-                    $q->where('created_at', '>', $lastSyncTime)
-                        ->orWhere('updated_at', '>', $lastSyncTime);
-                })
-                ->paginate($perPage, ['*'], 'page', $page);
-
-            $allUpdated = $allUpdated->merge($updatedRecords->items());
-
-            // Fetch deleted records if model uses SoftDeletes
-            $deletedRecords = $this->getDeletedRecords($model, $query, $lastSyncTime);
-            $allDeleted = $allDeleted->merge($deletedRecords);
-
-            $hasMore = $updatedRecords->hasMorePages();
-            $page++;
-        }
+        $deletedRecords = $this->getDeletedRecords($model, clone $query, $lastSyncTime);
 
         return [
-            'created' => collect(),    // keep empty for sendCreatedAsUpdated
-            'updated' => $allUpdated,
-            'deleted' => $allDeleted,
+            'created' => collect(),
+            'updated' => $updatedRecords,
+            'deleted' => $deletedRecords,
         ];
     }
-
 
 
     protected function applyScopes($model, Request $request)
