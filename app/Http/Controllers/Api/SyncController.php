@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BugReport;
 use App\Models\Cell;
+use App\Models\CollectionBatch;
 use App\Models\CollectionPoint;
 use App\Models\CollectionRoute;
 use App\Models\CollectionRouteWard;
@@ -16,6 +17,8 @@ use App\Models\Ward;
 use App\Models\WasteType;
 use App\Models\DumpingSite;
 use App\Models\RecyclingCenter;
+use App\Models\Vehicle;
+use App\Models\WasteCollection;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -38,8 +41,13 @@ class SyncController extends Controller
         'waste_types' => WasteType::class,
         'recycling_methods' => RecyclingMethod::class,
         'dumping_sites' => DumpingSite::class,
-        'recycling_centers' => RecyclingCenter::class
+        'recycling_centers' => RecyclingCenter::class,
+        'vehicles' => Vehicle::class,
+        'collection_batches' => CollectionBatch::class,
+        'waste_collection' => WasteCollection::class,
     ];
+
+    protected $tableTimestampsCache = [];
 
     public function syncPull(Request $request)
     {
@@ -80,7 +88,7 @@ class SyncController extends Controller
     protected function syncPullFirstTime($model, Request $request)
     {
         $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 500);
+        $perPage = (int) $request->input('per_page', 1000);
 
         Log::info("First-time sync for table: " . (new $model)->getTable(), [
             'page' => $page,
@@ -88,20 +96,44 @@ class SyncController extends Controller
         ]);
 
         $query = $this->applyScopes($model, $request)
-            ->select((new $model)->getFillable())
+            ->select(array_merge(
+                (new $model)->getFillable(),
+                ['uuid', 'id'],
+                $this->timestampColumns((new $model)->getTable())
+            ))
+
             ->orderBy('updated_at', 'asc')
             ->orderBy('id', 'asc');
+
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         return [
             'created' => collect(),
-            'updated' => $paginated->items(),
+            'updated' => collect($paginated->items())->map(fn($r) => $this->serializeRecord($r)),
             'deleted' => collect(),
             'has_more' => $paginated->hasMorePages(),
             'current_page' => $paginated->currentPage(),
         ];
     }
+
+    protected function timestampColumns($table)
+    {
+        if (isset($this->tableTimestampsCache[$table])) {
+            return $this->tableTimestampsCache[$table];
+        }
+
+        $cols = [];
+        foreach (['created_at', 'updated_at', 'deleted_at'] as $col) {
+            if (Schema::hasColumn($table, $col)) {
+                $cols[] = $col;
+            }
+        }
+
+        $this->tableTimestampsCache[$table] = $cols;
+        return $cols;
+    }
+
 
 
     protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
@@ -126,9 +158,32 @@ class SyncController extends Controller
 
         return [
             'created' => collect(),
-            'updated' => $updatedRecords,
+            'updated' => $updatedRecords->map(fn($r) => $this->serializeRecord($r)),
             'deleted' => $deletedRecords,
         ];
+    }
+
+    protected function serializeRecord($record)
+    {
+        $table = $record->getTable();
+        $timestamps = $this->timestampColumns($table);
+
+        $base = [
+            'uuid' => $record->uuid,
+            'id'   => $record->id,
+        ];
+
+        if (in_array('created_at', $timestamps)) {
+            $base['created_at'] = $record->created_at?->getTimestampMs();
+        }
+        if (in_array('updated_at', $timestamps)) {
+            $base['updated_at'] = $record->updated_at?->getTimestampMs();
+        }
+        if (in_array('deleted_at', $timestamps)) {
+            $base['deleted_at'] = $record->deleted_at?->getTimestampMs();
+        }
+
+        return $base + $record->only((new $record)->getFillable());
     }
 
 
@@ -152,10 +207,20 @@ class SyncController extends Controller
             return (clone $query)
                 ->onlyTrashed()
                 ->where('deleted_at', '>', $lastSyncTime)
-                ->pluck('id');
+                ->get(['uuid', 'deleted_at'])
+                ->map(function ($record) {
+                    return [
+                        'uuid' => $record->uuid,
+                        'deleted_at' => $record->deleted_at
+                            ? $record->deleted_at->getTimestampMs()
+                            : null,
+                    ];
+                });
         }
+
         return collect();
     }
+
 
     public function syncPush(Request $request)
     {
@@ -231,14 +296,15 @@ class SyncController extends Controller
         return null;
     }
 
-    protected function deleteRecord($model, $id)
+    protected function deleteRecord($model, $uuid)
     {
         if ($this->modelUsesSoftDeletes($model)) {
-            $model::where('id', $id)->delete();
+            $model::where('uuid', $uuid)->delete();
         } else {
-            $model::where('id', $id)->forceDelete();
+            $model::where('uuid', $uuid)->forceDelete();
         }
     }
+
 
     protected function mapRecordFields(array $record, $model = null): array
     {
