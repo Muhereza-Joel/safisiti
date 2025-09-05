@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ServerTimeController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
@@ -21,4 +22,5 @@ Route::prefix('v1')->group(function () {
     Route::get('/roles', [AuthController::class, 'getRoles']);
     Route::get('sync/users', [SyncController::class, 'pullUsers']);
     Route::post('sync/users', [SyncController::class, 'pushUsers']);
+    Route::get('/server-time', [ServerTimeController::class, 'index']);
 });

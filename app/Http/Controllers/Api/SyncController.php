@@ -44,7 +44,7 @@ class SyncController extends Controller
         'recycling_centers' => RecyclingCenter::class,
         'vehicles' => Vehicle::class,
         'collection_batches' => CollectionBatch::class,
-        'waste_collection' => WasteCollection::class,
+        'waste_collections' => WasteCollection::class,
     ];
 
     protected $tableTimestampsCache = [];
@@ -100,11 +100,15 @@ class SyncController extends Controller
                 (new $model)->getFillable(),
                 ['uuid', 'id'],
                 $this->timestampColumns((new $model)->getTable())
-            ))
+            ));
 
-            ->orderBy('updated_at', 'asc')
+        // Exclude soft-deleted records for first-time sync
+        if ($this->modelUsesSoftDeletes($model)) {
+            $query->whereNull('deleted_at');
+        }
+
+        $query->orderBy('updated_at', 'asc')
             ->orderBy('id', 'asc');
-
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -249,17 +253,24 @@ class SyncController extends Controller
 
     protected function syncRecord($modelClass, $record, Request $request)
     {
-        // Use withTrashed only if model supports it
         if (in_array(SoftDeletes::class, class_uses($modelClass))) {
             $existing = $modelClass::withTrashed()->where('uuid', $record['uuid'] ?? null)->first();
         } else {
             $existing = $modelClass::where('uuid', $record['uuid'] ?? null)->first();
         }
 
-        // Convert timestamp to Carbon
-        $clientUpdatedAt = isset($record['updated_at'])
-            ? Carbon::createFromTimestampMs($record['updated_at'], 'UTC')
-            : null;
+        // Normalize client updated_at
+        $clientUpdatedAt = null;
+        if (isset($record['updated_at'])) {
+            $timestamp = (int) $record['updated_at'];
+
+            // If it's milliseconds (13 digits), convert to seconds
+            if ($timestamp > 9999999999) {
+                $timestamp = (int) floor($timestamp / 1000);
+            }
+
+            $clientUpdatedAt = Carbon::createFromTimestamp($timestamp, 'UTC');
+        }
 
         $recordData = $this->mapRecordFields($record, $modelClass);
 
@@ -267,19 +278,29 @@ class SyncController extends Controller
         unset($recordData['organisation_id'], $recordData['user_id'], $recordData['password'], $recordData['password_confirmation']);
 
         if ($existing) {
-            // Server wins if more recent
-            if ($clientUpdatedAt && $existing->updated_at > $clientUpdatedAt) {
-                return $existing;
-            }
-
-            // Restore soft-deleted record if needed
+            // Restore soft-deleted if necessary
             if (in_array(SoftDeletes::class, class_uses($modelClass)) && $existing->trashed()) {
                 $existing->restore();
             }
 
-            $existing->fill($recordData)->save();
+            // Only update fields that the client says changed
+            if (!empty($record['_changed'])) {
+                $changedFields = explode(',', $record['_changed']);
+                foreach ($changedFields as $field) {
+                    $field = trim($field);
+                    if (array_key_exists($field, $recordData)) {
+                        $existing->$field = $recordData[$field];
+                    }
+                }
+            } else {
+                // fallback if _changed is missing
+                $existing->fill($recordData);
+            }
+
+            $existing->save();
             return $existing;
         }
+
 
         // Create new record
         if (isset($record['uuid'])) {
@@ -295,6 +316,8 @@ class SyncController extends Controller
 
         return null;
     }
+
+
 
     protected function deleteRecord($model, $uuid)
     {
