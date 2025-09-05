@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AwarenessCampaign;
 use App\Models\BugReport;
 use App\Models\Cell;
 use App\Models\CollectionBatch;
@@ -45,9 +46,29 @@ class SyncController extends Controller
         'vehicles' => Vehicle::class,
         'collection_batches' => CollectionBatch::class,
         'waste_collections' => WasteCollection::class,
+        'awareness_campaigns' => AwarenessCampaign::class,
     ];
 
     protected $tableTimestampsCache = [];
+
+    // Define timestamp fields that need conversion from milliseconds to seconds
+    protected $timestampFields = [
+        'updated_at',
+        'created_at',
+        'deleted_at',
+        'date_conducted'
+        // Add more timestamp fields here as needed
+    ];
+
+    // Never allow client to overwrite these  Fields
+    protected $protectedFields = [
+        'organisation_id',
+        'user_id',
+        'password',
+        'password_confirmation'
+        // Add more protected fields here as needed
+    ];
+
 
     public function syncPull(Request $request)
     {
@@ -259,23 +280,28 @@ class SyncController extends Controller
             $existing = $modelClass::where('uuid', $record['uuid'] ?? null)->first();
         }
 
-        // Normalize client updated_at
-        $clientUpdatedAt = null;
-        if (isset($record['updated_at'])) {
-            $timestamp = (int) $record['updated_at'];
-
-            // If it's milliseconds (13 digits), convert to seconds
-            if ($timestamp > 9999999999) {
-                $timestamp = (int) floor($timestamp / 1000);
-            }
-
-            $clientUpdatedAt = Carbon::createFromTimestamp($timestamp, 'UTC');
-        }
-
         $recordData = $this->mapRecordFields($record, $modelClass);
 
-        // Never allow client to overwrite these IDs
-        unset($recordData['organisation_id'], $recordData['user_id'], $recordData['password'], $recordData['password_confirmation']);
+
+        // Convert timestamp fields from milliseconds to seconds and create Carbon instances
+        foreach ($this->timestampFields as $field) {
+            if (isset($recordData[$field])) {
+                $timestamp = (int) $recordData[$field];
+
+                // If it's milliseconds (13 digits), convert to seconds
+                if ($timestamp > 9999999999) {
+                    $timestamp = (int) floor($timestamp / 1000);
+                }
+
+                $recordData[$field] = Carbon::createFromTimestamp($timestamp, 'UTC');
+            }
+        }
+
+
+
+        foreach ($this->protectedFields as $field) {
+            unset($recordData[$field]);
+        }
 
         if ($existing) {
             // Restore soft-deleted if necessary
@@ -301,14 +327,18 @@ class SyncController extends Controller
             return $existing;
         }
 
-
         // Create new record
         if (isset($record['uuid'])) {
-            if (Schema::hasColumn((new $modelClass)->getTable(), 'user_id')) {
-                $recordData['user_id'] = $request->user()->id;
-            }
-            if (Schema::hasColumn((new $modelClass)->getTable(), 'organisation_id')) {
-                $recordData['organisation_id'] = $request->user()->organisation_id;
+            // Add server-generated IDs if the table has these columns
+            $serverGeneratedFields = [
+                'user_id' => $request->user()->id,
+                'organisation_id' => $request->user()->organisation_id
+            ];
+
+            foreach ($serverGeneratedFields as $field => $value) {
+                if (Schema::hasColumn((new $modelClass)->getTable(), $field)) {
+                    $recordData[$field] = $value;
+                }
             }
 
             return $modelClass::create($recordData);
