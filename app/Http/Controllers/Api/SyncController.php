@@ -11,6 +11,7 @@ use App\Models\CollectionPoint;
 use App\Models\CollectionRoute;
 use App\Models\CollectionRouteWard;
 use App\Models\Contact;
+use App\Models\DirectCollection;
 use App\Models\Preference;
 use App\Models\RecyclingMethod;
 use App\Models\User;
@@ -47,6 +48,7 @@ class SyncController extends Controller
         'collection_batches' => CollectionBatch::class,
         'waste_collections' => WasteCollection::class,
         'awareness_campaigns' => AwarenessCampaign::class,
+        'direct_collections' => DirectCollection::class,
     ];
 
     protected $tableTimestampsCache = [];
