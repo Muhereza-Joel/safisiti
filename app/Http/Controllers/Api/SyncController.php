@@ -14,6 +14,7 @@ use App\Models\Contact;
 use App\Models\DirectCollection;
 use App\Models\Preference;
 use App\Models\RecyclingMethod;
+use App\Models\RecycleRecord;
 use App\Models\User;
 use App\Models\Ward;
 use App\Models\WasteType;
@@ -49,6 +50,7 @@ class SyncController extends Controller
         'waste_collections' => WasteCollection::class,
         'awareness_campaigns' => AwarenessCampaign::class,
         'direct_collections' => DirectCollection::class,
+        'recycle_records' => RecycleRecord::class,
     ];
 
     protected $tableTimestampsCache = [];
