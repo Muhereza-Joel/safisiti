@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ImageSyncController;
 use App\Http\Controllers\Api\ServerTimeController;
 use App\Http\Controllers\Api\SyncController;
 use Illuminate\Support\Facades\Request;
@@ -10,17 +11,25 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('sync/pull', [SyncController::class, 'syncPull']);
-        Route::get('sync/preferences', [SyncController::class, 'syncPreferences']);
-
         Route::post('sync/push', [SyncController::class, 'syncPush']);
-        Route::post('sync/contacts', [SyncController::class, 'syncContacts']);
-        Route::post('sync/preferences', [SyncController::class, 'syncPreferences']);
+
+        // Get image sync status
+        Route::get('images/sync', [ImageSyncController::class, 'getSyncStatus']);
+        // Upload image
+        Route::post('images/upload', [ImageSyncController::class, 'uploadImage']);
+        // Get image by ID
+        Route::get('images/{id}', [ImageSyncController::class, 'getImage']);
+        // Get images by associated entity
+        Route::get('entities/{entityType}/{entityId}/images', [ImageSyncController::class, 'getEntityImages']);
+        // Clean up orphaned images
+        Route::post('images/cleanup', [ImageSyncController::class, 'cleanupOrphanedImages']);
+
+
+
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/roles', [AuthController::class, 'getRoles']);
-    Route::get('sync/users', [SyncController::class, 'pullUsers']);
-    Route::post('sync/users', [SyncController::class, 'pushUsers']);
     Route::get('/server-time', [ServerTimeController::class, 'index']);
 });

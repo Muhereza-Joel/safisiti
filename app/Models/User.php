@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 use Ramsey\Uuid\Uuid;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, HasApiTokens, SoftDeletes;
+    use HasFactory, Notifiable, HasRoles, HasApiTokens, SoftDeletes, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -80,5 +82,28 @@ class User extends Authenticatable
     public function vehicles()
     {
         return $this->hasMany(Vehicle::class);
+    }
+
+
+    /**
+     * Register media collections for the user
+     */
+    public function registerMediaCollections(): void
+    {
+        $this
+            ->addMediaCollection('avatars') // you can name it "profile_pictures"
+            ->singleFile(); // ensures only 1 profile picture exists
+    }
+
+    /**
+     * Example: Add conversions (thumbnail, etc.)
+     */
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this
+            ->addMediaConversion('thumb')
+            ->width(200)
+            ->height(200)
+            ->sharpen(10);
     }
 }
