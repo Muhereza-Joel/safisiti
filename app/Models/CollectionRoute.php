@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use GeneaLabs\LaravelModelCaching\Traits\Cachable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,6 @@ class CollectionRoute extends Model
         'name',
         'description',
         'frequency',
-        'collection_days',
         'start_time',
         'end_time',
         'status',
@@ -27,7 +27,6 @@ class CollectionRoute extends Model
     ];
 
     protected $casts = [
-        'collection_days' => 'array',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
     ];

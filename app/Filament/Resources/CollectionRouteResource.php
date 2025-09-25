@@ -72,20 +72,6 @@ class CollectionRouteResource extends Resource
                             ->placeholder('Select frequency')
                             ->helperText('How often waste is collected along this route.'),
 
-                        Forms\Components\CheckboxList::make('collection_days')
-                            ->label('Collection Days')
-                            ->options([
-                                'Monday' => 'Monday',
-                                'Tuesday' => 'Tuesday',
-                                'Wednesday' => 'Wednesday',
-                                'Thursday' => 'Thursday',
-                                'Friday' => 'Friday',
-                                'Saturday' => 'Saturday',
-                                'Sunday' => 'Sunday',
-                            ])
-                            ->hidden(fn(Forms\Get $get) => $get('frequency') !== 'weekly' && $get('frequency') !== 'bi-weekly')
-                            ->helperText('Select the days when collection occurs (for weekly or bi-weekly routes).'),
-
                         Forms\Components\TimePicker::make('start_time')
                             ->label('Start Time')
                             ->seconds(false)
@@ -190,7 +176,7 @@ class CollectionRouteResource extends Resource
                     ->icon('heroicon-o-map')
                     ->url(fn(CollectionRoute $record) => static::getUrl('assign-wards', [$record])),
 
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
