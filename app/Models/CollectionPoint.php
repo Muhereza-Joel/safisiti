@@ -40,8 +40,8 @@ class CollectionPoint extends Model
 
     protected $casts = [
         'uuid' => 'string',
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
+        'latitude'     => 'float',
+        'longitude'    => 'float',
         'household_size' => 'integer',
         'bin_count' => 'integer',
         'last_collection_date' => 'date',
