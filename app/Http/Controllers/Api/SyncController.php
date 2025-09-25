@@ -53,6 +53,17 @@ class SyncController extends Controller
         'recycle_records' => RecycleRecord::class,
     ];
 
+    protected $syncWindow = [
+        'waste_collections'   => '1 months',
+        'direct_collections'   => '6 months',
+        'recycle_records'     => '6 months',
+        'collection_batches'  => '1 year',
+        'awareness_campaigns' => '1 year',
+        'bug_reports'         => '6 months',
+        'contacts'            => '6 year',
+        // Leave out tables that you always want fully synced
+    ];
+
     protected $tableTimestampsCache = [];
 
     // Define timestamp fields that need conversion from milliseconds to seconds
@@ -60,9 +71,12 @@ class SyncController extends Controller
         'updated_at',
         'created_at',
         'deleted_at',
-        'date_conducted'
+        'date_conducted',
+        'last_collection_date',
         // Add more timestamp fields here as needed
     ];
+
+
 
     // Never allow client to overwrite these  Fields
     protected $protectedFields = [
@@ -115,10 +129,7 @@ class SyncController extends Controller
         $page = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 1000);
 
-        Log::info("First-time sync for table: " . (new $model)->getTable(), [
-            'page' => $page,
-            'per_page' => $perPage
-        ]);
+        $table = (new $model)->getTable();
 
         $query = $this->applyScopes($model, $request)
             ->select(array_merge(
@@ -130,6 +141,12 @@ class SyncController extends Controller
         // Exclude soft-deleted records for first-time sync
         if ($this->modelUsesSoftDeletes($model)) {
             $query->whereNull('deleted_at');
+        }
+
+        // ⏳ Apply cutoff window if configured
+        if (isset($this->syncWindow[$table]) && Schema::hasColumn($table, 'created_at')) {
+            $cutoff = now()->sub($this->syncWindow[$table]);
+            $query->where('created_at', '>=', $cutoff);
         }
 
         $query->orderBy('updated_at', 'asc')
@@ -167,12 +184,18 @@ class SyncController extends Controller
 
     protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
     {
-        Log::info("Sync incremental called");
+
         $query = $this->applyScopes($model, $request)
             ->where(function ($q) use ($lastSyncTime) {
                 $q->where('created_at', '>', $lastSyncTime)
                     ->orWhere('updated_at', '>', $lastSyncTime);
             });
+
+        // ⏳ Apply cutoff window if configured
+        if (isset($this->syncWindow[$table]) && Schema::hasColumn((new $model)->getTable(), 'created_at')) {
+            $cutoff = now()->sub($this->syncWindow[$table]);
+            $query->where('created_at', '>=', $cutoff);
+        }
 
         $updatedRecords = collect();
 
@@ -233,13 +256,23 @@ class SyncController extends Controller
     protected function getDeletedRecords($model, $query, $lastSyncTime)
     {
         if ($this->modelUsesSoftDeletes($model)) {
-            return (clone $query)
+            $table = (new $model)->getTable();
+
+            $deletedQuery = (clone $query)
                 ->onlyTrashed()
-                ->where('deleted_at', '>', $lastSyncTime)
-                ->get(['uuid', 'deleted_at'])
+                ->where('deleted_at', '>', $lastSyncTime);
+
+            // ⏳ Apply cutoff window if configured
+            if (isset($this->syncWindow[$table]) && Schema::hasColumn($table, 'created_at')) {
+                $cutoff = now()->sub($this->syncWindow[$table]);
+                $deletedQuery->where('created_at', '>=', $cutoff);
+            }
+
+            return $deletedQuery
+                ->get(['uuid', 'deleted_at', 'created_at'])
                 ->map(function ($record) {
                     return [
-                        'uuid' => $record->uuid,
+                        'uuid'       => $record->uuid,
                         'deleted_at' => $record->deleted_at
                             ? $record->deleted_at->getTimestampMs()
                             : null,
@@ -249,6 +282,7 @@ class SyncController extends Controller
 
         return collect();
     }
+
 
 
     public function syncPush(Request $request)

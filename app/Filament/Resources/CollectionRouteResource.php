@@ -13,16 +13,30 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
 class CollectionRouteResource extends Resource
 {
     protected static ?string $model = CollectionRoute::class;
 
-    protected static ?string $navigationGroup = 'Route Management';
+    protected static ?string $navigationGroup = 'Waste Management';
 
     protected static ?string $navigationIcon = 'heroicon-o-lifebuoy';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -115,8 +129,6 @@ class CollectionRouteResource extends Resource
     }
 
 
-
-
     public static function table(Table $table): Table
     {
         return $table
@@ -184,6 +196,7 @@ class CollectionRouteResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    FilamentExportBulkAction::make('export')
                 ]),
             ]);
     }

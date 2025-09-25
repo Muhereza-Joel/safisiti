@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
 class CellResource extends Resource
 {
@@ -23,6 +24,18 @@ class CellResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
 
     protected static ?int $navigationSort = 3;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -102,8 +115,9 @@ class CellResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    FilamentExportBulkAction::make('export')
                 ]),
-            ]);
+            ])->defaultSort('created_at', 'desc');;
     }
 
     public static function getRelations(): array

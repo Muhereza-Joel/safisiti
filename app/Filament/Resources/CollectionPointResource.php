@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
 class CollectionPointResource extends Resource
 {
@@ -24,6 +26,18 @@ class CollectionPointResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
 
     protected static ?int $navigationSort = 4;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -334,12 +348,13 @@ class CollectionPointResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-            ])
+            ])->defaultSort('created_at', 'desc')
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    FilamentExportBulkAction::make('export')
                 ]),
             ])->recordClasses(function (Model $record) {
                 return $record->category

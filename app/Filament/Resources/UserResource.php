@@ -26,6 +26,18 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

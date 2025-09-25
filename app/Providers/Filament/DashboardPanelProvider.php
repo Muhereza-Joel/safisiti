@@ -63,18 +63,20 @@ class DashboardPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->navigationGroups([
+                'Waste Collection & Recycling',
+                'Waste Management',
                 'Administrative Units',
-                'Route Management',
                 'User Management',
                 'Roles & Permissions'
 
             ])
-            ->sidebarWidth('16rem')
+            ->sidebarWidth('18rem')
             ->unsavedChangesAlerts()
             ->databaseTransactions()
             ->simplePageMaxContentWidth(MaxWidth::Small)
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+                \Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin::make(),
                 \ShuvroRoy\FilamentSpatieLaravelHealth\FilamentSpatieLaravelHealthPlugin::make()
                     ->usingPage(HealthCheckResults::class)
                     ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator')),

@@ -7,11 +7,59 @@
 @tailwind utilities;
 
 /* Sidebar Styles */
-.fi-sidebar {
-    background-color: #0d1514 !important;
+.fi-sidebar,
+.fi-topbar {
+    background-color: #edf6fc !important;
 }
+
+body {
+    background-color: #edf6fc !important;
+}
+
+/* Sidebar scrollbar styling */
+.fi-sidebar {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #cbd5e1 #edf6fc; /* thumb | track */
+}
+
+/* Chrome, Edge, Safari */
+.fi-sidebar::-webkit-scrollbar {
+    width: 8px; /* adjust scrollbar width */
+}
+
+.fi-sidebar::-webkit-scrollbar-track {
+    background: #edf6fc; /* track color */
+}
+
+.fi-sidebar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* thumb color (slightly darker) */
+    border-radius: 8px;
+    border: 2px solid #edf6fc; /* blends into track */
+}
+
+/* Dark mode sidebar scrollbar */
 .dark .fi-sidebar {
-    background-color: #0d1514 !important; /* Slightly darker in dark mode */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #4b5563 #1a1d23; /* thumb | track */
+}
+
+/* Chrome, Edge, Safari */
+.dark .fi-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dark .fi-sidebar::-webkit-scrollbar-track {
+    background: #1a1d23; /* track = dark background */
+}
+
+.dark .fi-sidebar::-webkit-scrollbar-thumb {
+    background-color: #4b5563; /* thumb = mid-gray for visibility */
+    border-radius: 8px;
+    border: 2px solid #1a1d23; /* blends into track */
+}
+
+.dark .fi-sidebar {
+    background-color: #1a1d23 !important; /* Slightly darker in dark mode */
 }
 
 .fi-section {
@@ -23,25 +71,25 @@
 }
 
 .fi-sidebar-item-label {
-    color: #fff !important;
+    color: #250707 !important;
 }
 .dark .fi-sidebar-item-label {
-    color: #e0e6ed !important;
+    color: #edeff1 !important;
 }
 
 /* Active item */
 .fi-sidebar-item.fi-active.fi-sidebar-item-active a {
-    background-color: #1e2a47 !important;
+    background-color: #ffffff !important;
     color: #fff !important;
 }
 .dark .fi-sidebar-item.fi-active.fi-sidebar-item-active a {
-    background-color: #24304d !important;
+    background-color: #1f1e1e !important;
     color: #fff !important;
 }
 
 /* Hover */
 .fi-sidebar-item a:hover {
-    background-color: #020005 !important;
+    background-color: #edf8fc !important;
     color: #fff !important;
 }
 .dark .fi-sidebar-item a:hover {
@@ -55,11 +103,9 @@
 }
 
 /* Body background */
-body {
-    background-color: #f5fbfd !important;
-}
+
 .dark body {
-    background-color: #16181d !important; /* Tailwind slate-900 */
+    background-color: #1a1d23 !important; /* Tailwind slate-900 */
 }
 
 main {

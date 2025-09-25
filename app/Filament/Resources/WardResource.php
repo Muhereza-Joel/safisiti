@@ -14,6 +14,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+
 
 class WardResource extends Resource implements HasShieldPermissions
 {
@@ -43,6 +45,18 @@ class WardResource extends Resource implements HasShieldPermissions
             'export_data',
             'download_template',
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
     }
 
 
@@ -172,8 +186,9 @@ class WardResource extends Resource implements HasShieldPermissions
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    FilamentExportBulkAction::make('export')
                 ]),
-            ]);
+            ])->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

@@ -12,12 +12,29 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class WasteTypeResource extends Resource
 {
     protected static ?string $model = WasteType::class;
 
+    protected static ?string $navigationGroup = 'Waste Management';
+
     protected static ?string $navigationIcon = 'heroicon-o-trash';
+
+    protected static ?int $navigationSort = 6;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $query = static::getModel()::query();
+
+        // If not super_admin, filter by organisation_id
+        if (!Auth::user()->hasRole('super_admin')) {
+            $query->where('organisation_id', Auth::user()->organisation_id);
+        }
+
+        return (string) $query->count();
+    }
 
     public static function form(Form $form): Form
     {

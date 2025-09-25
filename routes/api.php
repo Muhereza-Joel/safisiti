@@ -32,4 +32,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/roles', [AuthController::class, 'getRoles']);
     Route::get('/server-time', [ServerTimeController::class, 'index']);
+    Route::match(['get', 'head'], '/health', function () {
+        return response()->noContent(200);
+    });
 });

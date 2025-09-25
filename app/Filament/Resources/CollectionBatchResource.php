@@ -20,6 +20,10 @@ class CollectionBatchResource extends Resource
 {
     protected static ?string $model = CollectionBatch::class;
 
+    protected static ?string $navigationGroup = 'Waste Collection & Recycling';
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $navigationIcon = 'heroicon-o-bars-3-bottom-right';
 
     public static function form(Form $form): Form
