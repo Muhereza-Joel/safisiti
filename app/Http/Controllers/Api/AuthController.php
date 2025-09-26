@@ -47,6 +47,7 @@ class AuthController extends Controller
             'Collection Agent',
             'Health Inspector',
             'Site Manager',
+            'Data Clerk',
         ];
 
         if (! $user->hasAnyRole($allowedRoles)) {
