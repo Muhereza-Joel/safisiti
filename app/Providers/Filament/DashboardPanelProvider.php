@@ -39,6 +39,9 @@ class DashboardPanelProvider extends PanelProvider
             ->theme(
                 asset('build/css/filament/style.css'),
             )
+            ->brandLogo(fn() => view('filament.dashboard.logo'))
+            ->brandLogoHeight('auto')
+            ->favicon(asset('/images/icon.png'))
             ->font('Tahoma')
             ->defaultThemeMode(ThemeMode::Dark)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
