@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\Ward;
 use App\Models\WasteType;
 use App\Models\DumpingSite;
+use App\Models\PointScan;
 use App\Models\RecyclingCenter;
 use App\Models\Vehicle;
 use App\Models\WasteCollection;
@@ -51,6 +52,7 @@ class SyncController extends Controller
         'awareness_campaigns' => AwarenessCampaign::class,
         'direct_collections' => DirectCollection::class,
         'recycle_records' => RecycleRecord::class,
+        'point_scans' => PointScan::class,
     ];
 
     protected $syncWindow = [
@@ -61,6 +63,7 @@ class SyncController extends Controller
         'awareness_campaigns' => '1 year',
         'bug_reports'         => '6 months',
         'contacts'            => '6 year',
+        'point_scans'         => '6 months',
         // Leave out tables that you always want fully synced
     ];
 
@@ -73,6 +76,7 @@ class SyncController extends Controller
         'deleted_at',
         'date_conducted',
         'last_collection_date',
+        'scanned_at',
         // Add more timestamp fields here as needed
     ];
 
