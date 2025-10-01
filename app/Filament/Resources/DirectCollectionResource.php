@@ -65,6 +65,9 @@ class DirectCollectionResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('dumpingSite.name')
+                    ->searchable()
+                    ->label('Dumping Site'),
                 Tables\Columns\TextColumn::make('name')
                     ->label("Brought By")
                     ->searchable(),

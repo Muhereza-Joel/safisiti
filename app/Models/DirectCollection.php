@@ -20,7 +20,9 @@ class DirectCollection extends Model
         'units',
         'notes',
         'waste_type_id',
+        'dumping_site_id',
         'waste_type_uuid',
+        'dumping_site_uuid',
         'segregated',
         'user_id',
         'user_uuid',
@@ -34,6 +36,7 @@ class DirectCollection extends Model
         'units' => 'string',
         'notes' => 'string',
         'waste_type_id' => 'integer',
+        'dumping_site_id' => 'integer',
         'user_id' => 'integer',
         'organisation_id' => 'integer',
         'segregated' => 'boolean',
@@ -89,6 +92,20 @@ class DirectCollection extends Model
                     $model->organisation_id = $org->id;
                 }
             }
+
+            // Dumping Site
+            if ($model->dumping_site_id && empty($model->dumping_site_uuid)) {
+                $dumpingSite = \App\Models\DumpingSite::find($model->dumping_site_id);
+                if ($dumpingSite) {
+                    $model->dumping_site_uuid = $dumpingSite->uuid;
+                }
+            }
+            if (!empty($model->dumping_site_uuid) && (!$model->dumping_site_id || $model->dumping_site_id == 0)) {
+                $dumpingSite = \App\Models\DumpingSite::withTrashed()->where('uuid', $model->dumping_site_uuid)->first();
+                if ($dumpingSite) {
+                    $model->dumping_site_id = $dumpingSite->id;
+                }
+            }
         });
 
         // Auto-fill UUID + organisation_id
@@ -103,6 +120,7 @@ class DirectCollection extends Model
         });
     }
 
+
     public function wasteType()
     {
         return $this->belongsTo(WasteType::class);
@@ -116,5 +134,10 @@ class DirectCollection extends Model
     public function organisation()
     {
         return $this->belongsTo(Organisation::class);
+    }
+
+    public function dumpingSite()
+    {
+        return $this->belongsTo(DumpingSite::class);
     }
 }
