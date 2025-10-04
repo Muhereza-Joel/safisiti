@@ -35,7 +35,6 @@ class SyncController extends Controller
     protected $syncableModels = [
         'users' => User::class,
         'contacts' => Contact::class,
-        'preferences' => Preference::class,
         'bug_reports' => BugReport::class,
         'collection_routes' => CollectionRoute::class,
         'wards' => Ward::class,
