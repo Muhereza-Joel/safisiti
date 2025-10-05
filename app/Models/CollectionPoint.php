@@ -28,7 +28,8 @@ class CollectionPoint extends Model
         'longitude',
         'structure_type',
         'household_size',
-        'waste_type',
+        'waste_type_id',
+        'waste_type_uuid',
         'collection_frequency',
         'bin_count',
         'bin_type',
@@ -140,5 +141,10 @@ class CollectionPoint extends Model
     public function organisation()
     {
         return $this->belongsTo(Organisation::class);
+    }
+
+    public function wasteType()
+    {
+        return $this->belongsTo(WasteType::class);
     }
 }
