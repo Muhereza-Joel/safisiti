@@ -12,14 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('collection_points', function (Blueprint $table) {
-            // Drop old waste_type column
-            $table->dropColumn('waste_type');
-
-            // Add new waste_type_id and waste_type_uuid (nullable)
-            $table->unsignedBigInteger('waste_type_id')->nullable()->after('structure_type');
-            $table->uuid('waste_type_uuid')->nullable()->after('waste_type_id');
-
-            // Make these columns nullable
             $table->string('structure_type')->nullable()->change();
             $table->string('collection_frequency')->nullable()->change();
             $table->integer('bin_count')->nullable()->change();
@@ -36,13 +28,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('collection_points', function (Blueprint $table) {
-            // Remove new columns
-            $table->dropColumn(['waste_type_id', 'waste_type_uuid']);
-
-            // Add back waste_type
-            $table->string('waste_type')->after('structure_type');
-
-            // Revert columns back to NOT NULL
             $table->string('structure_type')->nullable(false)->change();
             $table->string('collection_frequency')->nullable(false)->change();
             $table->integer('bin_count')->nullable(false)->change();

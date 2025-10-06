@@ -30,7 +30,6 @@ return new class extends Migration
             $table->decimal('longitude', 11, 8);
             $table->string('structure_type');
             $table->integer('household_size');
-            $table->string('waste_type');
             $table->string('collection_frequency');
             $table->integer('bin_count');
             $table->string('bin_type');
