@@ -43,10 +43,11 @@ class AuthController extends Controller
 
         // Gate by role
         $allowedRoles = [
-            // 'Service Provider',
-            // 'Collection Agent',
-            // 'Health Inspector',
-            // 'Site Manager',
+            'Organisation Administrator',
+            'Service Provider',
+            'Collection Agent',
+            'Health Inspector',
+            'Site Manager',
             'Data Clerk',
         ];
 
