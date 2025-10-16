@@ -34,7 +34,8 @@ class CollectionPoint extends Model
         'last_collection_date',
         'notes',
         'organisation_id',
-        'organisation_uuid'
+        'organisation_uuid',
+        'parent_uuid'
     ];
 
     protected $casts = [
