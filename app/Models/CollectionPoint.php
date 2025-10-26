@@ -35,7 +35,12 @@ class CollectionPoint extends Model
         'notes',
         'organisation_id',
         'organisation_uuid',
-        'parent_uuid'
+        'parent_uuid',
+        'custom_name',
+        'caretaker_name',
+        'caretaker_phone',
+        'alternate_contact_name',
+        'alternate_contact_phone',
     ];
 
     protected $casts = [

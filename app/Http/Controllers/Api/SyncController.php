@@ -8,6 +8,7 @@ use App\Models\BugReport;
 use App\Models\Cell;
 use App\Models\CollectionBatch;
 use App\Models\CollectionPoint;
+use App\Models\Section;
 use App\Models\CollectionRoute;
 use App\Models\CollectionRouteWard;
 use App\Models\Contact;
@@ -41,6 +42,7 @@ class SyncController extends Controller
         'collection_route_ward' => CollectionRouteWard::class,
         'cells' => Cell::class,
         'collection_points' => CollectionPoint::class,
+        'sections' => Section::class,
         'waste_types' => WasteType::class,
         'recycling_methods' => RecyclingMethod::class,
         'dumping_sites' => DumpingSite::class,
