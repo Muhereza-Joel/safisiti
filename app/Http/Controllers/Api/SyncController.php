@@ -78,6 +78,8 @@ class SyncController extends Controller
         'date_conducted',
         'last_collection_date',
         'scanned_at',
+        'start_time',
+        'end_time'
         // Add more timestamp fields here as needed
     ];
 
