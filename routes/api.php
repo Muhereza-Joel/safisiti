@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ImageSyncController;
 use App\Http\Controllers\Api\ServerTimeController;
 use App\Http\Controllers\Api\SyncController;
+use App\Http\Controllers\Api\VersionCheckController;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +36,5 @@ Route::prefix('v1')->group(function () {
     Route::match(['get', 'head'], '/health', function () {
         return response()->noContent(200);
     });
+    Route::get('/version-check', [VersionCheckController::class, 'check']);
 });
