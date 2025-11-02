@@ -33,6 +33,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/service-providers', [UserController::class, 'getServiceProviders']);
 
         Route::get('/service-providers/{uuid}', [UserController::class, 'getUserByUuid']);
+        Route::get('/collection-agents/{uuid}', [UserController::class, 'getUserByUuid']);
 
 
         Route::post('/logout', [AuthController::class, 'logout']);
