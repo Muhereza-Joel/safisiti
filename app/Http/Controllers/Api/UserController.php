@@ -161,8 +161,8 @@ class UserController extends Controller
                 'uuid',
                 'name',
                 'email',
-                'phone',
-                'status',
+                // 'phone',
+                // 'status',
                 'created_at',
                 'updated_at'
             ])

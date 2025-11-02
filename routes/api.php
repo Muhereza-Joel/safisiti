@@ -32,6 +32,8 @@ Route::prefix('v1')->group(function () {
         // Get service providers specifically  
         Route::get('/service-providers', [UserController::class, 'getServiceProviders']);
 
+        Route::get('/service-providers/{uuid}', [UserController::class, 'getUserByUuid']);
+
 
         Route::post('/logout', [AuthController::class, 'logout']);
     });
