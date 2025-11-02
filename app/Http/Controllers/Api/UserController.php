@@ -25,8 +25,8 @@ class UserController extends Controller
         $role = $request->input('role');
         $search = $request->input('search', '');
         $perPage = $request->input('per_page', 20);
+        $organisationId = $request->user()->organisation_id;
 
-        // Validate that the role exists
         if (!Role::where('name', $role)->exists()) {
             return response()->json([
                 'success' => false,
@@ -35,28 +35,18 @@ class UserController extends Controller
             ], 404);
         }
 
-        // Create cache key based on parameters
-        $cacheKey = "users_role_{$role}_search_{$search}_perpage_{$perPage}";
+        $cacheKey = "users_org_{$organisationId}_role_{$role}_search_{$search}_perpage_{$perPage}";
 
-        // Cache for 5 minutes to reduce database load
-        $users = Cache::remember($cacheKey, 300, function () use ($role, $search, $perPage) {
+        $users = Cache::remember($cacheKey, 300, function () use ($role, $search, $perPage, $organisationId) {
             return User::role($role)
+                ->where('organisation_id', $organisationId)
                 ->when($search, function ($query) use ($search) {
                     $query->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
                     });
                 })
-                ->select([
-                    'uuid',
-                    'name',
-                    'email',
-                    // 'phone',
-                    // 'status',
-                    'created_at',
-                    'updated_at'
-                ])
-                // ->where('status', 'active') // Only active users
+                ->select(['uuid', 'name', 'email', 'created_at', 'updated_at'])
                 ->orderBy('name')
                 ->paginate($perPage);
         });
@@ -74,25 +64,16 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Get all inspectors
-     */
     public function getCollectionAgents(Request $request): JsonResponse
     {
         return $this->getUsersByRole($request->merge(['role' => 'Collection Agent']));
     }
 
-    /**
-     * Get all service providers
-     */
     public function getServiceProviders(Request $request): JsonResponse
     {
         return $this->getUsersByRole($request->merge(['role' => 'Service Provider']));
     }
 
-    /**
-     * Get users by multiple roles
-     */
     public function getUsersByRoles(Request $request): JsonResponse
     {
         $request->validate([
@@ -105,8 +86,8 @@ class UserController extends Controller
         $roles = $request->input('roles');
         $search = $request->input('search', '');
         $perPage = $request->input('per_page', 20);
+        $organisationId = $request->user()->organisation_id;
 
-        // Validate that all roles exist
         $existingRoles = Role::whereIn('name', $roles)->pluck('name')->toArray();
         $nonExistingRoles = array_diff($roles, $existingRoles);
 
@@ -119,21 +100,14 @@ class UserController extends Controller
         }
 
         $users = User::role($roles)
+            ->where('organisation_id', $organisationId)
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->select([
-                'uuid',
-                'name',
-                'email',
-                'phone',
-                'status',
-                'created_at',
-                'updated_at'
-            ])
+            ->select(['uuid', 'name', 'email', 'phone', 'status', 'created_at', 'updated_at'])
             ->where('status', 'active')
             ->orderBy('name')
             ->paginate($perPage);
@@ -151,21 +125,13 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Get user details by UUID
-     */
-    public function getUserByUuid($uuid): JsonResponse
+    public function getUserByUuid($uuid, Request $request): JsonResponse
     {
+        $organisationId = $request->user()->organisation_id;
+
         $user = User::where('uuid', $uuid)
-            ->select([
-                'uuid',
-                'name',
-                'email',
-                // 'phone',
-                // 'status',
-                'created_at',
-                'updated_at'
-            ])
+            ->where('organisation_id', $organisationId)
+            ->select(['uuid', 'name', 'email', 'created_at', 'updated_at'])
             ->with('roles:name,guard_name')
             ->first();
 
