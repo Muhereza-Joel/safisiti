@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ImageSyncController;
 use App\Http\Controllers\Api\ServerTimeController;
 use App\Http\Controllers\Api\SyncController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VersionCheckController;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,11 @@ Route::prefix('v1')->group(function () {
         // Clean up orphaned images
         Route::post('images/cleanup', [ImageSyncController::class, 'cleanupOrphanedImages']);
 
+        // Get inspectors specifically
+        Route::get('/collection-agents', [UserController::class, 'getCollectionAgents']);
+
+        // Get service providers specifically  
+        Route::get('/service-providers', [UserController::class, 'getServiceProviders']);
 
 
         Route::post('/logout', [AuthController::class, 'logout']);
