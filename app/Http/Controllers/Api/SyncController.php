@@ -188,15 +188,18 @@ class SyncController extends Controller
     }
 
 
-
     protected function syncPullIncremental($model, $table, Request $request, $lastSyncTime)
     {
-
         $query = $this->applyScopes($model, $request)
             ->where(function ($q) use ($lastSyncTime) {
                 $q->where('created_at', '>', $lastSyncTime)
                     ->orWhere('updated_at', '>', $lastSyncTime);
             });
+
+        // Only exclude soft-deleted records if the table has a deleted_at column
+        if (Schema::hasColumn((new $model)->getTable(), 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
 
         // ⏳ Apply cutoff window if configured
         if (isset($this->syncWindow[$table]) && Schema::hasColumn((new $model)->getTable(), 'created_at')) {
@@ -209,14 +212,17 @@ class SyncController extends Controller
         $query->orderBy('updated_at', 'asc')
             ->orderBy('id', 'asc')
             ->chunk(500, function ($chunk) use (&$updatedRecords) {
-                // merge the chunk into the main collection
                 $updatedRecords = $updatedRecords->merge($chunk);
             });
 
-        $deletedRecords = $this->getDeletedRecords($model, clone $query, $lastSyncTime);
+        // Create a new query for deleted records instead of cloning the filtered one
+        $deletedRecords = $this->getDeletedRecords($model, $request, $lastSyncTime);
+
+
+        $restoredRecords = $this->getRestoredRecords($model, $request, $lastSyncTime);
 
         return [
-            'created' => collect(),
+            'created' => $restoredRecords->map(fn($r) => $this->serializeRecord($r)),
             'updated' => $updatedRecords->map(fn($r) => $this->serializeRecord($r)),
             'deleted' => $deletedRecords,
         ];
@@ -260,12 +266,46 @@ class SyncController extends Controller
         return $query;
     }
 
-    protected function getDeletedRecords($model, $query, $lastSyncTime)
+    protected function getRestoredRecords($model, Request $request, $lastSyncTime)
     {
         if ($this->modelUsesSoftDeletes($model)) {
             $table = (new $model)->getTable();
 
-            $deletedQuery = (clone $query)
+            // Alternative approach: Look for records that were in the trash at lastSyncTime but are now restored
+            $restoredQuery = $this->applyScopes($model, $request)
+                ->where(function ($q) use ($lastSyncTime) {
+                    // Records that have been updated (likely due to restoration)
+                    $q->where('updated_at', '>', $lastSyncTime)
+                        // And were previously soft-deleted (we infer this by checking if they appear in trashed records from before)
+                        ->where(function ($q2) use ($lastSyncTime) {
+                            $q2->whereNotNull('deleted_at')
+                                ->orWhere('deleted_at', '<=', $lastSyncTime);
+                        });
+                })
+                ->whereNull('deleted_at'); // But are now restored
+
+            // ⏳ Apply cutoff window if configured
+            if (isset($this->syncWindow[$table]) && Schema::hasColumn($table, 'created_at')) {
+                $cutoff = now()->sub($this->syncWindow[$table]);
+                $restoredQuery->where('created_at', '>=', $cutoff);
+            }
+
+            return $restoredQuery
+                ->orderBy('updated_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+        }
+
+        return collect();
+    }
+
+    protected function getDeletedRecords($model, Request $request, $lastSyncTime)
+    {
+        if ($this->modelUsesSoftDeletes($model)) {
+            $table = (new $model)->getTable();
+
+            // Create a new query without the deleted_at filter
+            $deletedQuery = $this->applyScopes($model, $request)
                 ->onlyTrashed()
                 ->where('deleted_at', '>', $lastSyncTime);
 
@@ -289,7 +329,6 @@ class SyncController extends Controller
 
         return collect();
     }
-
 
 
     public function syncPush(Request $request)
