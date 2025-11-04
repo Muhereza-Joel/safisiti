@@ -101,11 +101,6 @@ class SyncController extends Controller
         $lastSyncTime = $lastPulledAt ? Carbon::createFromTimestampMs($lastPulledAt, 'UTC') : null;
         $requestedTable = $request->input('table');
 
-        Log::info("Sync pull requested", [
-            'last_pulled_at' => $lastPulledAt,
-            'table' => $requestedTable
-        ]);
-
         $changes = [];
 
         // Handle table-specific request
