@@ -71,6 +71,80 @@ class AuthController extends Controller
         ]);
     }
 
+    public function dataGridLogin(Request $request)
+    {
+        // Validate request input
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        // Check user existence
+        $user = User::where('email', $request->email)->first();
+        if (! $user) {
+            return response()->json([
+                'errors' => [
+                    'email' => ['No account found with this email.'],
+                ],
+            ], 422);
+        }
+
+        // Verify password
+        if (! Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'errors' => [
+                    'password' => ['Incorrect password.'],
+                ],
+            ], 422);
+        }
+
+        // Load roles and permissions
+        $user = $request->user()->load('roles.permissions');
+
+        // ✅ Only allow root and System Administrator
+        $allowedRoles = ['root', 'System Administrator'];
+
+        if (! $user->hasAnyRole($allowedRoles)) {
+            Auth::logout();
+
+            return response()->json([
+                'errors' => [
+                    'role' => ['Your account is not authorized to access the Data Grid.'],
+                ],
+            ], 403);
+        }
+
+        // Generate Sanctum token
+        $token = $user->createToken('DATA_GRID_TOKEN')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'token'   => $token,
+            'user'    => $user,
+        ]);
+    }
+
+    public function dataGridUser(Request $request)
+    {
+        // Ensure user is authenticated
+        $user = $request->user()->load('roles.permissions');
+
+        // Check allowed access roles
+        $allowedRoles = ['root', 'System Administrator'];
+
+        if (! $user->hasAnyRole($allowedRoles)) {
+            return response()->json([
+                'errors' => [
+                    'role' => ['You are not authorized to access the Data Grid.'],
+                ],
+            ], 403);
+        }
+
+        return response()->json($user, 200);
+    }
+
+
+
 
     // Logout method
     public function logout(Request $request)

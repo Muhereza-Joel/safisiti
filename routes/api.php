@@ -39,6 +39,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 
+    Route::post('/data-grid/login', [AuthController::class, 'dataGridLogin']);
+    Route::middleware('auth:sanctum')->get('/data-grid/user', [AuthController::class, 'dataGridUser']);
+
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/roles', [AuthController::class, 'getRoles']);
     Route::get('/server-time', [ServerTimeController::class, 'index']);
