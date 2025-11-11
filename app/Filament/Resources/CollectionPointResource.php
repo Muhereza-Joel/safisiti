@@ -319,27 +319,60 @@ class CollectionPointResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('waste_type')
-                    ->label('Waste Type')
-                    ->options([
-                        'domestic' => 'Mixed Waste',
-                        'commercial' => 'Commercial',
-                        'organic' => 'Organic Only',
-                        'recyclable' => 'Recyclable Only',
-                        'hazardous' => 'Hazardous Waste',
-                        'mixed' => 'Mixed',
-                    ])
-                    ->searchable(),
+                Tables\Filters\SelectFilter::make('ward')
+                    ->relationship('ward', 'name', function (Builder $query) {
+                        // Respect organization scoping from the form
+                        if (!auth()->user()->hasRole('System Administrator')) {
+                            $query->where('organisation_id', auth()->user()->organisation_id);
+                        }
+                        return $query;
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->label('Ward'),
 
-                Tables\Filters\SelectFilter::make('collection_frequency')
-                    ->label('Collection Frequency')
-                    ->options([
-                        'daily' => 'Daily',
-                        'weekly' => 'Weekly',
-                        'biweekly' => 'Bi-Weekly',
-                        'monthly' => 'Monthly',
+                Tables\Filters\SelectFilter::make('cell')
+                    ->relationship('cell', 'name', function (Builder $query) {
+                        // Scope cells by the user's organization via the ward
+                        if (!auth()->user()->hasRole('System Administrator')) {
+                            $query->whereHas('ward', function (Builder $query) {
+                                $query->where('organisation_id', auth()->user()->organisation_id);
+                            });
+                        }
+                        return $query;
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->label('Cell'),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Date From'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Date Until'),
                     ])
-                    ->searchable(),
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['created_from'] ?? null) {
+                            $indicators['created_from'] = 'From ' . \Carbon\Carbon::parse($data['created_from'])->toFormattedDateString();
+                        }
+                        if ($data['created_until'] ?? null) {
+                            $indicators['created_until'] = 'Until ' . \Carbon\Carbon::parse($data['created_until'])->toFormattedDateString();
+                        }
+                        return $indicators;
+                    }),
 
 
                 Tables\Filters\TrashedFilter::make(),
