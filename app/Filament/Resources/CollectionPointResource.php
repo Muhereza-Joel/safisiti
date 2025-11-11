@@ -16,6 +16,11 @@ use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use TCPDF;
+use ZipArchive;
+use Illuminate\Support\Facades\File;
+use Illuminate\Database\Eloquent\Collection;
+use Filament\Tables\Actions\BulkAction;
 
 class CollectionPointResource extends Resource
 {
@@ -387,7 +392,44 @@ class CollectionPointResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
-                    FilamentExportBulkAction::make('export')
+                    FilamentExportBulkAction::make('export'),
+                    // --- ADD THIS NEW BULK ACTION ---
+                    BulkAction::make('download_qr_zip')
+                        ->label('Download QR Codes (ZIP)')
+                        ->icon('heroicon-o-archive-box-arrow-down')
+                        ->action(function (Collection $records) {
+                            // Create a unique zip file name in a temp directory
+                            $zipFileName = 'collection_point_qrs_' . now()->format('Y-m-d_His') . '.zip';
+                            $zipFilePath = storage_path('app/temp/' . $zipFileName);
+
+                            // Ensure the temp directory exists
+                            File::ensureDirectoryExists(storage_path('app/temp'));
+
+                            $zip = new ZipArchive();
+
+                            if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+                                throw new \Exception("Cannot open zip archive at $zipFilePath");
+                            }
+
+                            // Loop through selected records
+                            foreach ($records as $record) {
+                                // Generate the PDF content using our new helper function
+                                $pdfContent = self::generateQrPdf($record);
+
+                                // Sanitize the name for the file inside the zip
+                                $fileNameInZip = preg_replace('/[^A-Za-z0-9\-_]/', '_', $record->name) . '_qr.pdf';
+
+                                // Add the PDF string to the zip
+                                $zip->addFromString($fileNameInZip, $pdfContent);
+                            }
+
+                            $zip->close();
+
+                            // Download the zip file and delete it after sending
+                            return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    // --- END OF NEW BULK ACTION ---
                 ]),
             ])->recordClasses(function (Model $record) {
                 return $record->category
@@ -412,6 +454,69 @@ class CollectionPointResource extends Resource
             'view' => Pages\ViewCollectionPoint::route('/{record}'),
             'edit' => Pages\EditCollectionPoint::route('/{record}/edit'),
         ];
+    }
+
+    public static function generateQrPdf(CollectionPoint $record): string
+    {
+        $qrValue = url('/dashboard/collection-points/' . $record->uuid);
+
+        $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        $pdf->SetCreator('SafiSiti System');
+        $pdf->SetAuthor('SafiSiti');
+        $pdf->SetTitle($record->name . ' QR Code');
+
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->AddPage();
+
+        // --- HEADER ---
+        $pdf->SetFont('helvetica', 'B', 28);
+        $pdf->Cell(0, 10, 'SAFISITI', 0, 1, 'C');
+
+        $pdf->SetFont('helvetica', 'I', 14);
+        $pdf->Cell(0, 8, 'Keeping Our City Clean', 0, 1, 'C');
+        $pdf->Ln(8);
+
+        // --- CTA ---
+        $pdf->SetFont('helvetica', 'B', 18);
+        $pdf->Cell(0, 12, 'SCAN ME TO PICK WASTE FROM HERE', 0, 1, 'C');
+        $pdf->Ln(10);
+
+        // --- LOCATION DETAILS ---
+        $pdf->SetFont('helvetica', 'B', 16);
+        $pdf->Cell(0, 8, strtoupper($record->name), 0, 1, 'C');
+
+        $pdf->SetFont('helvetica', '', 12);
+        $pdf->Cell(0, 6, $record->address ?? '', 0, 1, 'C');
+        $pdf->Ln(8);
+
+        // --- QR CODE (TCPDF native) ---
+        $style = [
+            'border' => 0,
+            'vpadding' => 0,
+            'hpadding' => 0,
+            'fgcolor' => [0, 0, 0],
+            'bgcolor' => false
+        ];
+
+        /**
+         * write2DBarcode(
+         * $code, $type, $x, $y, $w, $h, $style, $align
+         * )
+         */
+        $pdf->write2DBarcode($qrValue, 'QRCODE,H', 55, $pdf->GetY(), 100, 100, $style, 'N');
+        $pdf->Ln(115);
+
+        // --- FOOTER ---
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetY(-55);
+        $pdf->Cell(0, 6, 'FROM ToroDev-ODA Under The Datacities Project.', 0, 1, 'C');
+        $pdf->Cell(0, 6, 'Powered By MOELS GROUP: www.moelsgroup.com', 0, 1, 'C');
+
+        // Output PDF as a string
+        return $pdf->Output($record->name . '_qr.pdf', 'S');
     }
 
     public static function getEloquentQuery(): Builder
