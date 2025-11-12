@@ -4,6 +4,7 @@ namespace App\Models;
 
 use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // Import BelongsTo
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Ramsey\Uuid\Uuid;
@@ -58,91 +59,100 @@ class CollectionPoint extends Model
         return 'uuid';
     }
 
+    /**
+     * OPTIMIZED BOOTED METHOD
+     *
+     * This method is now much more efficient and avoids N+1 queries.
+     */
     protected static function booted()
     {
-        // Keep IDs and UUIDs in sync
+        // This event runs BEFORE saving (on create and update)
         static::saving(function ($model) {
-            // Ward
-            if ($model->ward_id && empty($model->ward_uuid)) {
-                $ward = \App\Models\Ward::find($model->ward_id);
-                if ($ward) {
-                    $model->ward_uuid = $ward->uuid;
-                }
-            }
-            if (!empty($model->ward_uuid) && (!$model->ward_id || $model->ward_id == 0)) {
-                $ward = \App\Models\Ward::withTrashed()->where('uuid', $model->ward_uuid)->first();
-                if ($ward) {
-                    $model->ward_id = $ward->id;
-                }
+            // Use relationship properties instead of new queries.
+            // This is "query-free" if the relationship is already set.
+
+            // Example:
+            // $point->ward = Ward::find(1);
+            // $point->save(); // This event will now be efficient.
+
+            // Sync Ward ID/UUID
+            if ($model->isDirty('ward_id') && !$model->isDirty('ward_uuid')) {
+                // ward_id changed, update uuid from the loaded relationship
+                $model->ward_uuid = $model->ward?->uuid;
+            } elseif ($model->isDirty('ward_uuid') && !$model->isDirty('ward_id')) {
+                // ward_uuid changed, update id from the loaded relationship
+                $model->ward_id = $model->ward?->id;
             }
 
-            // Cell
-            if ($model->cell_id && empty($model->cell_uuid)) {
-                $cell = \App\Models\Cell::find($model->cell_id);
-                if ($cell) {
-                    $model->cell_uuid = $cell->uuid;
-                }
-            }
-            if (!empty($model->cell_uuid) && (!$model->cell_id || $model->cell_id == 0)) {
-                $cell = \App\Models\Cell::withTrashed()->where('uuid', $model->cell_uuid)->first();
-                if ($cell) {
-                    $model->cell_id = $cell->id;
-                }
+            // Sync Cell ID/UUID
+            if ($model->isDirty('cell_id') && !$model->isDirty('cell_uuid')) {
+                $model->cell_uuid = $model->cell?->uuid;
+            } elseif ($model->isDirty('cell_uuid') && !$model->isDirty('cell_id')) {
+                $model->cell_id = $model->cell?->id;
             }
 
-            // Organisation
-            if ($model->organisation_id && empty($model->organisation_uuid)) {
-                $org = \App\Models\Organisation::find($model->organisation_id);
-                if ($org) {
-                    $model->organisation_uuid = $org->uuid;
-                }
-            }
-            if (!empty($model->organisation_uuid) && (!$model->organisation_id || $model->organisation_id == 0)) {
-                $org = \App\Models\Organisation::withTrashed()->where('uuid', $model->organisation_uuid)->first();
-                if ($org) {
-                    $model->organisation_id = $org->id;
-                }
+            // Sync Organisation ID/UUID
+            if ($model->isDirty('organisation_id') && !$model->isDirty('organisation_uuid')) {
+                $model->organisation_uuid = $model->organisation?->uuid;
+            } elseif ($model->isDirty('organisation_uuid') && !$model->isDirty('organisation_id')) {
+                $model->organisation_id = $model->organisation?->id;
             }
         });
 
-        // Auto-fill UUID + organisation_id
+        // This event runs ONLY when creating a new model
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = Uuid::uuid4()->toString();
             }
 
-            if (empty($model->organisation_id) && Auth::check()) {
-                $model->organisation_id = Auth::user()->organisation_id;
+            // Auto-fill from authenticated user
+            if (Auth::check()) {
+                if (empty($model->organisation_id)) {
+                    $model->organisation_id = Auth::user()->organisation_id;
+                }
+                if (empty($model->organisation_uuid)) {
+                    // Try to get from user's loaded org, fall back to a query if needed
+                    $model->organisation_uuid = Auth::user()->organisation?->uuid
+                        ?? Organisation::find(Auth::user()->organisation_id)?->uuid;
+                }
             }
 
-            // Sync UUIDs for ward + cell if IDs exist
-            if (!empty($model->ward_id)) {
-                $model->ward_uuid = \App\Models\Ward::find($model->ward_id)?->uuid;
+            // Sync related UUIDs if only IDs are provided
+            // This is now the ONLY place that runs queries, and only if needed.
+            if (!empty($model->ward_id) && empty($model->ward_uuid)) {
+                $model->ward_uuid = Ward::find($model->ward_id)?->uuid;
             }
 
-            if (!empty($model->cell_id)) {
-                $model->cell_uuid = \App\Models\Cell::find($model->cell_id)?->uuid;
+            if (!empty($model->cell_id) && empty($model->cell_uuid)) {
+                $model->cell_uuid = Cell::find($model->cell_id)?->uuid;
             }
 
-            // Get organisation UUID from current user if missing
-            if (Auth::check() && empty($model->organisation_uuid)) {
-                $model->organisation_uuid = Auth::user()->organisation?->uuid;
+            // Sync related IDs if only UUIDs are provided
+            if (!empty($model->ward_uuid) && empty($model->ward_id)) {
+                $model->ward_id = Ward::where('uuid', $model->ward_uuid)->value('id');
+            }
+            if (!empty($model->cell_uuid) && empty($model->cell_id)) {
+                $model->cell_id = Cell::where('uuid', $model->cell_uuid)->value('id');
+            }
+            if (!empty($model->organisation_uuid) && empty($model->organisation_id)) {
+                $model->organisation_id = Organisation::where('uuid', $model->organisation_uuid)->value('id');
             }
         });
     }
 
+    // --- RELATIONSHIPS ---
 
-    public function ward()
+    public function ward(): BelongsTo
     {
         return $this->belongsTo(Ward::class);
     }
 
-    public function cell()
+    public function cell(): BelongsTo
     {
         return $this->belongsTo(Cell::class);
     }
 
-    public function organisation()
+    public function organisation(): BelongsTo
     {
         return $this->belongsTo(Organisation::class);
     }

@@ -7,6 +7,7 @@ use App\Models\CollectionPoint;
 use App\Models\Organisation;
 use Illuminate\Console\Command;
 use App\Models\Ward;
+use Illuminate\Support\Facades\DB; // <-- 1. ADDED THIS IMPORT
 
 class BackfillCollectionPointUuids extends Command
 {
@@ -21,23 +22,33 @@ class BackfillCollectionPointUuids extends Command
      */
     public function handle()
     {
-        CollectionPoint::whereNull('ward_uuid')
-            ->orWhereNull('cell_uuid')
-            ->orWhereNull('organisation_uuid')
-            ->chunk(500, function ($points) {
-                foreach ($points as $p) {
-                    if (empty($p->ward_uuid) && $p->ward_id) {
-                        $p->ward_uuid = optional(Ward::find($p->ward_id))->uuid;
-                    }
-                    if (empty($p->cell_uuid) && $p->cell_id) {
-                        $p->cell_uuid = optional(Cell::find($p->cell_id))->uuid;
-                    }
-                    if (empty($p->organisation_uuid) && $p->organisation_id) {
-                        $p->organisation_uuid = optional(Organisation::find($p->organisation_id))->uuid;
-                    }
-                    $p->save();
-                }
-            });
+        // 2. REPLACED the entire 'handle' method with this optimized version
+
+        $this->info('Starting UUID backfill...');
+
+        $this->info('Backfilling ward_uuid...');
+        // This one query updates all ward_uuids at once
+        DB::table('collection_points AS cp')
+            ->join('wards AS w', 'cp.ward_id', '=', 'w.id')
+            ->whereNull('cp.ward_uuid')
+            ->whereNotNull('cp.ward_id')
+            ->update(['cp.ward_uuid' => DB::raw('w.uuid')]);
+
+        $this->info('Backfilling cell_uuid...');
+        // This one query updates all cell_uuids at once
+        DB::table('collection_points AS cp')
+            ->join('cells AS c', 'cp.cell_id', '=', 'c.id')
+            ->whereNull('cp.cell_uuid')
+            ->whereNotNull('cp.cell_id')
+            ->update(['cp.cell_uuid' => DB::raw('c.uuid')]);
+
+        $this->info('Backfilling organisation_uuid...');
+        // This one query updates all organisation_uuids at once
+        DB::table('collection_points AS cp')
+            ->join('organisations AS o', 'cp.organisation_id', '=', 'o.id')
+            ->whereNull('cp.organisation_uuid')
+            ->whereNotNull('cp.organisation_id')
+            ->update(['cp.organisation_uuid' => DB::raw('o.uuid')]);
 
         $this->info('✅ CollectionPoint UUIDs backfilled successfully!');
     }
