@@ -30,6 +30,11 @@ class User extends Authenticatable implements HasMedia
         'name',
         'email',
         'password',
+        'is_active',
+        'is_suspended',
+        'suspended_until',
+        'suspension_reason',
+        'last_login_at',
     ];
 
     /**
@@ -52,6 +57,10 @@ class User extends Authenticatable implements HasMedia
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'is_suspended' => 'boolean',
+            'suspended_until' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 

@@ -78,9 +78,17 @@ class SyncController extends Controller
         'date_conducted',
         'last_collection_date',
         'scanned_at',
-        'start_time',
-        'end_time'
+        'suspended_until',
+        'last_login_at',
+        'date'
         // Add more timestamp fields here as needed
+    ];
+
+    protected $timeOnlyFields = [
+        'start_time',
+        'end_time',
+        'check_in_time',
+        'check_out_time'
     ];
 
 
@@ -368,6 +376,21 @@ class SyncController extends Controller
                         }
                     }
 
+                    // NEW: Convert time-only fields
+                    foreach ($this->timeOnlyFields as $field) {
+                        if (isset($recordData[$field]) && !is_null($recordData[$field])) {
+                            try {
+                                // Parse the time string (e.g., "09:00" or "09:00:00")
+                                // and format it for the database.
+                                $recordData[$field] = Carbon::parse($recordData[$field])->format('H:i:s');
+                            } catch (\Exception $e) {
+                                // If parsing fails, set to null
+                                Log::warning("Invalid time format for $field in syncPush: " . $recordData[$field]);
+                                $recordData[$field] = null;
+                            }
+                        }
+                    }
+
                     // Remove protected fields (from old syncRecord)
                     foreach ($this->protectedFields as $field) {
                         unset($recordData[$field]);
@@ -454,7 +477,11 @@ class SyncController extends Controller
         if ($model) {
             $fillable = (new $model)->getFillable();
             // We also need to include our custom timestamp fields that might not be fillable
-            $allFields = array_unique(array_merge($fillable, $this->timestampFields));
+            $allFields = array_unique(array_merge(
+                $fillable,
+                $this->timestampFields,
+                $this->timeOnlyFields // <-- ADD THIS
+            ));
 
             return collect($record)
                 ->only($allFields) // Use combined list
