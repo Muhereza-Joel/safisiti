@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 // No models are needed here anymore since we use DB::table()
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB; // Make sure this is imported
+use Illuminate\Support\Facades\Artisan; // Import the Artisan facade
 
 class BackfillCollectionPointUuids extends Command
 {
@@ -12,7 +13,7 @@ class BackfillCollectionPointUuids extends Command
     protected $signature = 'backfill:collection-point-uuids';
 
     // The console command description
-    protected $description = 'Backfill ward, cell, and organisation IDs/UUIDs (in both directions)';
+    protected $description = 'Backfill ward, cell, and organisation IDs/UUIDs (in both directions) and clear cache';
 
     /**
      * Execute the console command.
@@ -77,5 +78,10 @@ class BackfillCollectionPointUuids extends Command
             ->update(['cp.organisation_id' => DB::raw('o.id')]); // Update the ID
 
         $this->info('✅ CollectionPoint ID/UUID sync complete!');
+
+        // --- NEW: Clear application cache ---
+        $this->info('Clearing application cache...');
+        Artisan::call('cache:clear');
+        $this->info('✅ Application cache cleared!');
     }
 }
