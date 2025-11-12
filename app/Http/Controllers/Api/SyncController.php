@@ -326,6 +326,10 @@ class SyncController extends Controller
     }
 
 
+    /**
+     * NEW: Refactored syncPush to use batch operations (upsert, whereIn)
+     * This massively reduces the number of queries from N+1 to ~2 per table.
+     */
     public function syncPush(Request $request)
     {
         $allChanges = $request->input('changes', []);
@@ -336,107 +340,100 @@ class SyncController extends Controller
                     continue;
                 }
 
-                $model = $this->syncableModels[$table];
+                $modelClass = $this->syncableModels[$table];
+                $modelInstance = new $modelClass;
+                $tableName = $modelInstance->getTable();
 
-                foreach (array_merge($data['created'] ?? [], $data['updated'] ?? []) as $record) {
-                    $this->syncRecord($model, $record, $request);
+                // --- 1. Batch Create/Update (Upsert) ---
+                $upsertData = [];
+                $recordsToUpsert = array_merge($data['created'] ?? [], $data['updated'] ?? []);
+
+                foreach ($recordsToUpsert as $record) {
+                    // Start with fillable fields
+                    $recordData = $this->mapRecordFields($record, $modelClass);
+
+                    // Add uuid, as mapRecordFields might remove it
+                    if (isset($record['uuid'])) {
+                        $recordData['uuid'] = $record['uuid'];
+                    }
+
+                    // Convert timestamps (from old syncRecord)
+                    foreach ($this->timestampFields as $field) {
+                        if (isset($recordData[$field])) {
+                            $timestamp = (int) $recordData[$field];
+                            if ($timestamp > 9999999999) { // Is milliseconds
+                                $timestamp = (int) floor($timestamp / 1000);
+                            }
+                            $recordData[$field] = Carbon::createFromTimestamp($timestamp, 'UTC');
+                        }
+                    }
+
+                    // Remove protected fields (from old syncRecord)
+                    foreach ($this->protectedFields as $field) {
+                        unset($recordData[$field]);
+                    }
+
+                    // Add server-generated fields (from old syncRecord)
+                    // These will be used for INSERT, but not for UPDATE (see below)
+                    $serverGeneratedFields = [
+                        'user_id' => $request->user()->id,
+                        'organisation_id' => $request->user()->organisation_id
+                    ];
+
+                    foreach ($serverGeneratedFields as $field => $value) {
+                        if (Schema::hasColumn($tableName, $field)) {
+                            $recordData[$field] = $value;
+                        }
+                    }
+
+                    // Handle restore-on-update
+                    if ($this->modelUsesSoftDeletes($modelClass)) {
+                        $recordData['deleted_at'] = null;
+                    }
+
+                    $upsertData[] = $recordData;
                 }
 
-                foreach ($data['deleted'] ?? [] as $id) {
-                    $this->deleteRecord($model, $id);
+                if (!empty($upsertData)) {
+                    // Define columns that should be UPDATED on duplicate key
+                    // We take all keys from the first record, then remove ones we never update
+                    $updateColumns = collect(array_keys($upsertData[0]))
+                        ->diff($this->protectedFields) // 'user_id', 'organisation_id'
+                        ->diff(['uuid', 'id', 'created_at']) // Never update these
+                        ->all();
+
+                    // Make sure deleted_at is in update list to handle restores
+                    if ($this->modelUsesSoftDeletes($modelClass) && !in_array('deleted_at', $updateColumns)) {
+                        $updateColumns[] = 'deleted_at';
+                    }
+
+                    $modelClass::upsert($upsertData, ['uuid'], $updateColumns);
+                }
+
+                // --- 2. Batch Delete ---
+                $deletedUuids = $data['deleted'] ?? [];
+                if (!empty($deletedUuids)) {
+                    $query = $modelClass::whereIn('uuid', $deletedUuids);
+
+                    // Scope deletes to the user/org
+                    if (Schema::hasColumn($tableName, 'user_id')) {
+                        $query->where('user_id', $request->user()->id);
+                    }
+                    if (Schema::hasColumn($tableName, 'organisation_id')) {
+                        $query->where('organisation_id', $request->user()->organisation_id);
+                    }
+
+                    if ($this->modelUsesSoftDeletes($modelClass)) {
+                        $query->delete();
+                    } else {
+                        $query->forceDelete();
+                    }
                 }
             }
         });
 
         return response()->json(['status' => 'ok']);
     }
-
-    protected function syncRecord($modelClass, $record, Request $request)
-    {
-        if (in_array(SoftDeletes::class, class_uses($modelClass))) {
-            $existing = $modelClass::withTrashed()->where('uuid', $record['uuid'] ?? null)->first();
-        } else {
-            $existing = $modelClass::where('uuid', $record['uuid'] ?? null)->first();
-        }
-
-        $recordData = $this->mapRecordFields($record, $modelClass);
-
-
-        // Convert timestamp fields from milliseconds to seconds and create Carbon instances
-        foreach ($this->timestampFields as $field) {
-            if (isset($recordData[$field])) {
-                $timestamp = (int) $recordData[$field];
-
-                // If it's milliseconds (13 digits), convert to seconds
-                if ($timestamp > 9999999999) {
-                    $timestamp = (int) floor($timestamp / 1000);
-                }
-
-                $recordData[$field] = Carbon::createFromTimestamp($timestamp, 'UTC');
-            }
-        }
-
-
-
-        foreach ($this->protectedFields as $field) {
-            unset($recordData[$field]);
-        }
-
-        if ($existing) {
-            // Restore soft-deleted if necessary
-            if (in_array(SoftDeletes::class, class_uses($modelClass)) && $existing->trashed()) {
-                $existing->restore();
-            }
-
-            // Only update fields that the client says changed
-            if (!empty($record['_changed'])) {
-                $changedFields = explode(',', $record['_changed']);
-                foreach ($changedFields as $field) {
-                    $field = trim($field);
-                    if (array_key_exists($field, $recordData)) {
-                        $existing->$field = $recordData[$field];
-                    }
-                }
-            } else {
-                // fallback if _changed is missing
-                $existing->fill($recordData);
-            }
-
-            $existing->save();
-            return $existing;
-        }
-
-        // Create new record
-        if (isset($record['uuid'])) {
-            // Add server-generated IDs if the table has these columns
-            $serverGeneratedFields = [
-                'user_id' => $request->user()->id,
-                'organisation_id' => $request->user()->organisation_id
-            ];
-
-            foreach ($serverGeneratedFields as $field => $value) {
-                if (Schema::hasColumn((new $modelClass)->getTable(), $field)) {
-                    $recordData[$field] = $value;
-                }
-            }
-
-            return $modelClass::create($recordData);
-        }
-
-        return null;
-    }
-
-
-
-    protected function deleteRecord($model, $uuid)
-    {
-        if ($this->modelUsesSoftDeletes($model)) {
-            $model::where('uuid', $uuid)->delete();
-        } else {
-            $model::where('uuid', $uuid)->forceDelete();
-        }
-    }
-
 
     protected function mapRecordFields(array $record, $model = null): array
     {
@@ -456,8 +453,11 @@ class SyncController extends Controller
 
         if ($model) {
             $fillable = (new $model)->getFillable();
+            // We also need to include our custom timestamp fields that might not be fillable
+            $allFields = array_unique(array_merge($fillable, $this->timestampFields));
+
             return collect($record)
-                ->only($fillable)
+                ->only($allFields) // Use combined list
                 ->except($excludedFields)
                 ->toArray();
         }
