@@ -24,6 +24,8 @@ use App\Models\PointScan;
 use App\Models\RecyclingCenter;
 use App\Models\Vehicle;
 use App\Models\WasteCollection;
+use App\Models\WorkRotta;
+use App\Models\WorkRottaCell;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -54,6 +56,8 @@ class SyncController extends Controller
         'direct_collections' => DirectCollection::class,
         'recycle_records' => RecycleRecord::class,
         'point_scans' => PointScan::class,
+        'work_rotta' => WorkRotta::class,
+        'work_rotta_cells' => WorkRottaCell::class,
     ];
 
     protected $syncWindow = [
@@ -65,6 +69,9 @@ class SyncController extends Controller
         'bug_reports'         => '6 months',
         'contacts'            => '6 year',
         'point_scans'         => '6 months',
+        'work_rotta'          => '3 months',
+        'work_rotta_cells'    => '3 months'
+
         // Leave out tables that you always want fully synced
     ];
 
