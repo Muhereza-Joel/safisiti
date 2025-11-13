@@ -89,7 +89,6 @@ class SyncController extends Controller
         'scanned_at',
         'suspended_until',
         'last_login_at',
-        'date'
         // Add more timestamp fields here as needed
     ];
 
