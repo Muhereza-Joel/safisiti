@@ -37,8 +37,8 @@ return new class extends Migration
             $table->uuid('work_rotta_uuid')->index();
             $table->uuid('cell_uuid');
             $table->string('status');
-            $table->unsignedBigInteger('organisation_id');
-            $table->uuid('organisation_uuid');
+            $table->unsignedBigInteger('organisation_id')->nullable();
+            $table->uuid('organisation_uuid')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
