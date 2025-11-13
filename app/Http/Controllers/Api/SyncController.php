@@ -241,24 +241,68 @@ class SyncController extends Controller
     protected function serializeRecord($record)
     {
         $table = $record->getTable();
-        $timestamps = $this->timestampColumns($table);
+        $timestamps = $this->timestampColumns($table); // Gets ['created_at', 'updated_at', 'deleted_at']
 
-        $base = [
+        // 1. Start with base fields
+        $serializedData = [
             'uuid' => $record->uuid,
             'id'   => $record->id,
         ];
 
+        // 2. Get ALL fillable fields and add them
+        $fillableFields = $record->only((new $record)->getFillable());
+        $serializedData = $serializedData + $fillableFields;
+
+        // 3. OVERRIDE standard timestamps (to ensure milliseconds)
         if (in_array('created_at', $timestamps)) {
-            $base['created_at'] = $record->created_at?->getTimestampMs();
+            $serializedData['created_at'] = $record->created_at?->getTimestampMs();
         }
         if (in_array('updated_at', $timestamps)) {
-            $base['updated_at'] = $record->updated_at?->getTimestampMs();
+            $serializedData['updated_at'] = $record->updated_at?->getTimestampMs();
         }
         if (in_array('deleted_at', $timestamps)) {
-            $base['deleted_at'] = $record->deleted_at?->getTimestampMs();
+            $serializedData['deleted_at'] = $record->deleted_at?->getTimestampMs();
         }
 
-        return $base + $record->only((new $record)->getFillable());
+        // 4. NEW: OVERRIDE time-only fields (to ensure H:i:s format)
+        foreach ($this->timeOnlyFields as $field) {
+            // Check if the field exists in the data we're about to send
+            if (array_key_exists($field, $serializedData)) {
+                // Only format if it's not null
+                if (!is_null($serializedData[$field])) {
+                    try {
+                        // Parse whatever it is (Carbon, string) and format to H:i:s
+                        $serializedData[$field] = Carbon::parse($serializedData[$field])->format('H:i:s');
+                    } catch (\Exception $e) {
+                        Log::warning("Could not parse time field '$field' during syncPull: " . $serializedData[$field]);
+                        $serializedData[$field] = null; // Set to null on failure
+                    }
+                }
+            }
+        }
+
+        // 5. NEW: OVERRIDE other timestamp fields (like 'date') to ensure milliseconds
+        foreach ($this->timestampFields as $field) {
+            // Skip fields we've already handled
+            if (in_array($field, $this->timeOnlyFields) || in_array($field, $timestamps)) {
+                continue;
+            }
+
+            // Check if the field exists in the data
+            if (array_key_exists($field, $serializedData)) {
+                if (!is_null($serializedData[$field])) {
+                    try {
+                        // Parse whatever it is and convert to Milliseconds
+                        $serializedData[$field] = Carbon::parse($serializedData[$field])->getTimestampMs();
+                    } catch (\Exception $e) {
+                        Log::warning("Could not parse timestamp field '$field' during syncPull: " . $serializedData[$field]);
+                        $serializedData[$field] = null;
+                    }
+                }
+            }
+        }
+
+        return $serializedData;
     }
 
 
