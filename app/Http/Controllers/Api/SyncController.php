@@ -26,6 +26,7 @@ use App\Models\Vehicle;
 use App\Models\WasteCollection;
 use App\Models\WorkRotta;
 use App\Models\WorkRottaCell;
+use App\Models\TeamMember;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -58,6 +59,7 @@ class SyncController extends Controller
         'point_scans' => PointScan::class,
         'work_rotta' => WorkRotta::class,
         'work_rotta_cells' => WorkRottaCell::class,
+        'team_members' => TeamMember::class,
     ];
 
     protected $syncWindow = [
