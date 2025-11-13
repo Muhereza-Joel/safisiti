@@ -26,7 +26,7 @@ return new class extends Migration
             $table->uuid('service_provider_user_uuid')->nullable();
             $table->uuid('assigned_to')->nullable();
             $table->unsignedBigInteger('organisation_id')->nullable();
-            $table->uuid('organisation_uuid');
+            $table->uuid('organisation_uuid')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
