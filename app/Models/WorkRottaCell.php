@@ -19,6 +19,7 @@ class WorkRottaCell extends Model
         'status',
         'organisation_id',
         'organisation_uuid',
+        'is_active',
     ];
 
     protected $casts = [

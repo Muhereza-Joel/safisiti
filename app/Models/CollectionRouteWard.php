@@ -16,6 +16,7 @@ class CollectionRouteWard extends Pivot
         'ward_id',
         'ward_uuid',
         'collection_order',
+        'is_active',
     ];
 
     protected static function booted()
