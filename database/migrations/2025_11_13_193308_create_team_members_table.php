@@ -11,7 +11,7 @@ class CreateTeamMembersTable extends Migration
         Schema::create('team_members', function (Blueprint $table) {
 
             $table->id();
-            $table->uuid('uuid')->primary();
+            $table->uuid('uuid');
             $table->uuid('provider_user_uuid');
             $table->string('name');
             $table->string('phone')->nullable();
