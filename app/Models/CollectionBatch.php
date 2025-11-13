@@ -20,6 +20,9 @@ class CollectionBatch extends Model
         'vehicle_uuid',
         'status',
         'organisation_id',
+        'owner_user_uuid',
+        'dumpsite_uuid',
+        'actual_tonnage'
     ];
 
     protected $casts = [
