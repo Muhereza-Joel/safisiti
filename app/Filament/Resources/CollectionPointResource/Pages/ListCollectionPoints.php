@@ -46,26 +46,61 @@ class ListCollectionPoints extends ListRecords
     {
         return [
             'all' => Tab::make('All'),
+
+            'group' => Tab::make('Groups')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'group')),
+
             'household' => Tab::make('Households')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'household')),
+
             'market' => Tab::make('Markets')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'market')),
+
             'school' => Tab::make('Schools')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'school')),
-            'hospital' => Tab::make('Hospitals')
-                ->modifyQueryUsing(fn($query) => $query->where('category', 'hospital')),
+
+            'health center' => Tab::make('Health Centeres')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'health center')),
+
             'clinic' => Tab::make('Clinics')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'clinic')),
+
             'restaurant' => Tab::make('Restaurants')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'restaurant')),
+
             'hotel' => Tab::make('Hotels')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'hotel')),
+
             'office' => Tab::make('Offices')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'office')),
+
             'shop' => Tab::make('Shops')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'shop')),
+
             'supermarket' => Tab::make('Supermarkets')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'supermarket')),
+
+            'church' => Tab::make('Churches')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'church')),
+
+            'mosque' => Tab::make('Mosques')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'mosque')),
+
+            'saloon' => Tab::make('Saloons')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'saloon')),
+
+            'bar' => Tab::make('Bars')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'bar')),
+
+            'factory' => Tab::make('Factories')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'factory')),
+
+            'garage' => Tab::make('Garages')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'garage')),
+
+            'furniture' => Tab::make('Furniture')
+                ->modifyQueryUsing(fn($query) => $query->where('category', 'furniture')),
+
             'other' => Tab::make('Others')
                 ->modifyQueryUsing(fn($query) => $query->where('category', 'other')),
         ];
