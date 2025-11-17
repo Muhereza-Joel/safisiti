@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -14,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class User extends Authenticatable implements HasMedia
+class User extends Authenticatable implements HasMedia, FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles, HasApiTokens, SoftDeletes, InteractsWithMedia;
@@ -114,5 +116,11 @@ class User extends Authenticatable implements HasMedia
             ->width(200)
             ->height(200)
             ->sharpen(10);
+    }
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        // Allowed Roles To Access Panel
+        return $this->hasRole(['super_admin', 'System Administrator', 'Organisation Administrator', 'Health Inspector']);
     }
 }
