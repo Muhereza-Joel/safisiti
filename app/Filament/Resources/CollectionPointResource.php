@@ -323,6 +323,7 @@ class CollectionPointResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->paginationPageOptions([10, 25, 50, 100, 200])
             ->filters([
                 Tables\Filters\SelectFilter::make('ward')
                     ->relationship('ward', 'name', function (Builder $query) {
