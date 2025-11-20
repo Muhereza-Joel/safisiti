@@ -59,17 +59,21 @@ class CollectionBatchResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('collection_batch_number')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('vehicle.user.name')
                     ->label('Service Provider')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('vehicle.registration_number')
                     ->label('Vehicle Number Plate')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('Garbage Collected')
                     ->label('Amount Collected')
+                    ->placeholder('N/A')
                     ->numeric(),
-                Tables\Columns\TextColumn::make('status'),
+                Tables\Columns\TextColumn::make('status')->placeholder('N/A'),
 
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()

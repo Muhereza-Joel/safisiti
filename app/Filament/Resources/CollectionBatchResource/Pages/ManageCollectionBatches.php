@@ -6,7 +6,7 @@ use App\Filament\Resources\CollectionBatchResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Notification;
+use Filament\Notifications\Notification;
 
 class ManageCollectionBatches extends ManageRecords
 {
