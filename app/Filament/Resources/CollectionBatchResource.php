@@ -253,11 +253,19 @@ class CollectionBatchResource extends Resource
         ];
     }
 
+
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', auth()->user()->organisation_id);
+        }
+
+        return $query;
     }
 }

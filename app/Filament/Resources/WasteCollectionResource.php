@@ -140,4 +140,19 @@ class WasteCollectionResource extends Resource
             'edit' => Pages\EditWasteCollection::route('/{record}/edit'),
         ];
     }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+
+        // If not an Administrator, scope to the user's organisation
+        if (!auth()->user()->hasRole('System Administrator')) {
+            $query->where('organisation_id', auth()->user()->organisation_id);
+        }
+
+        return $query;
+    }
 }
