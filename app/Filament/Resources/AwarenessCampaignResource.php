@@ -50,16 +50,21 @@ class AwarenessCampaignResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('inspector.name')
                     ->label('Health Inspector')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('title')
                     ->label('Campaign Title')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('date_conducted')
+                    ->placeholder('N/A')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('participants_count')
+                    ->placeholder('N/A')
                     ->numeric()
                     ->sortable(),
 

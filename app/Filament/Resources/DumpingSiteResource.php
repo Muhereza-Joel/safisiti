@@ -96,10 +96,13 @@ class DumpingSiteResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('latitude')
+                    ->placeholder('N/A')
                     ->numeric(
                         decimalPlaces: 4,
                         decimalSeparator: '.',
@@ -111,6 +114,7 @@ class DumpingSiteResource extends Resource
                         is_numeric($state) ? number_format((float)$state, 5) : $state
                     ),
                 Tables\Columns\TextColumn::make('longitude')
+                    ->placeholder('N/A')
                     ->numeric(
                         decimalPlaces: 5,
                         decimalSeparator: '.',

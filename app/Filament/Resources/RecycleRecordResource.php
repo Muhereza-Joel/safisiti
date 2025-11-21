@@ -62,11 +62,14 @@ class RecycleRecordResource extends Resource
             ->columns([
 
                 Tables\Columns\TextColumn::make('recyclingCenter.name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('recyclingMethod.name')
+                    ->placeholder('N/A')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('quantity')
+                    ->placeholder('N/A')
                     ->label('Quantity')
                     ->getStateUsing(fn($record) => "{$record->quantity} {$record->units}")
                     ->sortable(query: function ($query, $direction) {

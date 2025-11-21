@@ -79,16 +79,22 @@ class WasteCollectionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label("Service Provider")->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label("Service Provider")
+                    ->searchable()
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('collectionBatch.collection_batch_number')
+                    ->placeholder('N/A')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('collectionPoint.name')
+                    ->placeholder('N/A')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('wasteType.name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('amount')
+                    ->placeholder('N/A')
                     ->label('Quantity')
                     ->getStateUsing(fn($record) => "{$record->amount} {$record->units}")
                     ->sortable(query: function ($query, $direction) {
@@ -96,6 +102,7 @@ class WasteCollectionResource extends Resource
                     }),
 
                 Tables\Columns\IconColumn::make('segregated')
+                    ->placeholder('N/A')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()

@@ -67,16 +67,21 @@ class DirectCollectionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('dumpingSite.name')
                     ->searchable()
+                    ->placeholder('N/A')
                     ->label('Dumping Site'),
                 Tables\Columns\TextColumn::make('name')
                     ->label("Brought By")
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('contact')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
+                    ->placeholder('N/A')
                     ->label("Recieved By"),
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Quantity')
+                    ->placeholder('N/A')
                     ->getStateUsing(fn($record) => "{$record->quantity} {$record->units}")
                     ->sortable(query: function ($query, $direction) {
                         $query->orderBy('quantity', $direction);
@@ -84,8 +89,10 @@ class DirectCollectionResource extends Resource
 
                 Tables\Columns\TextColumn::make('wasteType.name')
                     ->numeric()
+                    ->placeholder('N/A')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('segregated')
+                    ->placeholder('N/A')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()

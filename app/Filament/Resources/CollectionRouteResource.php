@@ -121,19 +121,25 @@ class CollectionRouteResource extends Resource
             ->columns([
 
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('frequency')->label('Collection Rounds'),
+                Tables\Columns\TextColumn::make('frequency')
+                    ->label('Collection Rounds')
+                    ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('start_time')
                     ->label('Start Time')
+                    ->placeholder('N/A')
                     ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->format('h:i A') : null)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('end_time')
                     ->label('End Time')
+                    ->placeholder('N/A')
                     ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->format('h:i A') : null)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
+                    ->placeholder('N/A')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'active' => 'success',
@@ -146,6 +152,7 @@ class CollectionRouteResource extends Resource
 
                 Tables\Columns\TextColumn::make('wards_count')
                     ->label('Wards')
+                    ->placeholder('N/A')
                     ->counts('wards') // this will auto-load the count
                     ->sortable(),
 

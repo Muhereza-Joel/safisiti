@@ -110,15 +110,19 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('organisation.name')
                     ->label('Member Entity')
+                    ->placeholder('N/A')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->label('Fullname')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
+                    ->placeholder('N/A')
                     ->label('Email Address')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('roles.name')
+                    ->placeholder('N/A')
                     ->label('Prevelage')
                     ->sortable(),
 

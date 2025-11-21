@@ -68,8 +68,10 @@ class WasteTypeResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('description')
+                    ->placeholder('N/A')
                     ->html()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('deleted_at')

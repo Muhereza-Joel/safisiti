@@ -83,8 +83,10 @@ class CellResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('ward.name')
+                    ->placeholder('N/A')
                     ->numeric()
                     ->searchable()
                     ->sortable(),

@@ -101,14 +101,18 @@ class RecyclingCenterResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
+                    ->placeholder('N/A')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('latitude')
+                    ->placeholder('N/A')
                     ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('longitude')
+                    ->placeholder('N/A')
                     ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->numeric()
                     ->sortable(),
