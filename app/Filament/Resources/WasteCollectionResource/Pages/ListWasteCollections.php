@@ -8,6 +8,8 @@ use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Artisan;
+use Filament\Notifications\Notification;
 
 class ListWasteCollections extends ListRecords
 {
@@ -17,6 +19,27 @@ class ListWasteCollections extends ListRecords
     {
         return [
             // Actions\CreateAction::make(),
+            // --- ADD THIS ACTION ---
+            Actions\Action::make('backfill_uuids')
+                ->label('Sync ID/UUIDs')
+                ->icon('heroicon-o-arrow-path')
+                ->color('warning') // Use a color to show it's a special action
+                ->requiresConfirmation() // Ask the user "Are you sure?"
+                ->modalHeading('Sync Collections IDs/UUIDs')
+                ->modalDescription('Are you sure you want to run the ID/UUID sync? This will scan the database and fix any missing links between collections, waste types, batches and collection points. This is safe to run anytime.')
+                ->modalSubmitActionLabel('Yes, run sync')
+                ->action(function () {
+                    // 1. Call your Artisan command
+                    Artisan::call('backfill:waste-collection-uuids');
+
+                    // 2. Send a success notification
+                    Notification::make()
+                        ->title('Sync Complete')
+                        ->body('The Collections ID/UUID sync has been successfully executed.')
+                        ->success()
+                        ->send();
+                }),
+            // --- END OF ACTION ---
         ];
     }
 
