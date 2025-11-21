@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ListWasteCollections extends ListRecords
 {
@@ -28,49 +29,76 @@ class ListWasteCollections extends ListRecords
             'today' => Tab::make('Today')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
-                    $query->whereDate('created_at', now()->toDateString())
+                    $this->scopeToOrg($query)->whereDate('created_at', now()->toDateString())
                 )
                 ->badge($this->getTodayCount()),
 
             'this_week' => Tab::make('This Week')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
-                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+                    $this->scopeToOrg($query)->whereBetween('created_at', [
+                        now()->startOfWeek(),
+                        now()->endOfWeek(),
+                    ])
                 )
                 ->badge($this->getThisWeekCount()),
 
             'this_month' => Tab::make('This Month')
                 ->modifyQueryUsing(
                     fn(Builder $query) =>
-                    $query->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+                    $this->scopeToOrg($query)->whereBetween('created_at', [
+                        now()->startOfMonth(),
+                        now()->endOfMonth(),
+                    ])
                 )
                 ->badge($this->getThisMonthCount()),
         ];
     }
 
+    /**
+     * Apply organisation scope
+     */
+    protected function scopeToOrg(Builder $query): Builder
+    {
+        $orgId = Auth::user()->organisation_id;
+
+        return $query->where('organisation_id', $orgId);
+    }
+
     protected function getAllCount(): int
     {
-        return static::getResource()::getModel()::count();
+        return static::getResource()::getModel()
+            ::where('organisation_id', Auth::user()->organisation_id)
+            ->count();
     }
 
     protected function getTodayCount(): int
     {
         return static::getResource()::getModel()
-            ::whereDate('created_at', now()->toDateString())
+            ::where('organisation_id', Auth::user()->organisation_id)
+            ->whereDate('created_at', now()->toDateString())
             ->count();
     }
 
     protected function getThisWeekCount(): int
     {
         return static::getResource()::getModel()
-            ::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ::where('organisation_id', Auth::user()->organisation_id)
+            ->whereBetween('created_at', [
+                now()->startOfWeek(),
+                now()->endOfWeek()
+            ])
             ->count();
     }
 
     protected function getThisMonthCount(): int
     {
         return static::getResource()::getModel()
-            ::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ::where('organisation_id', Auth::user()->organisation_id)
+            ->whereBetween('created_at', [
+                now()->startOfMonth(),
+                now()->endOfMonth()
+            ])
             ->count();
     }
 }
