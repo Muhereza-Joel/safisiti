@@ -154,9 +154,11 @@ class WardResource extends Resource implements HasShieldPermissions
                     ->sortable()
                     ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('latitude')
+                    ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->sortable()
                     ->placeholder('N/A'),
                 Tables\Columns\TextColumn::make('longitude')
+                    ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->sortable()
                     ->placeholder('N/A'),
 

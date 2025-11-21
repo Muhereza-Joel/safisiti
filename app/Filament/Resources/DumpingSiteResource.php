@@ -108,18 +108,18 @@ class DumpingSiteResource extends Resource
                     ->sortable()
                     ->formatStateUsing(
                         fn($state): string =>
-                        is_numeric($state) ? number_format((float)$state, 4) : $state
+                        is_numeric($state) ? number_format((float)$state, 5) : $state
                     ),
                 Tables\Columns\TextColumn::make('longitude')
                     ->numeric(
-                        decimalPlaces: 4,
+                        decimalPlaces: 5,
                         decimalSeparator: '.',
                         thousandsSeparator: ''
                     )
                     ->sortable()
                     ->formatStateUsing(
                         fn($state): string =>
-                        is_numeric($state) ? number_format((float)$state, 4) : $state
+                        is_numeric($state) ? number_format((float)$state, 5) : $state
                     ),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()

@@ -105,9 +105,11 @@ class RecyclingCenterResource extends Resource
                 Tables\Columns\TextColumn::make('location')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('latitude')
+                    ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('longitude')
+                    ->formatStateUsing(fn($state) => number_format($state, 5, '.', ''))
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('deleted_at')
