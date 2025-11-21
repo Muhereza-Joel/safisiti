@@ -277,12 +277,12 @@ class CollectionPointResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('latitude')
                     ->placeholder('N/A')
-                    ->numeric()
+                    ->formatStateUsing(fn($state) => number_format($state, 8, '.', ''))
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('longitude')
                     ->placeholder('N/A')
-                    ->numeric()
+                    ->formatStateUsing(fn($state) => number_format($state, 8, '.', ''))
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('structure_type')
