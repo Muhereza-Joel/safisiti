@@ -77,6 +77,12 @@ class SyncController extends Controller
         // Leave out tables that you always want fully synced
     ];
 
+    // ** NEW: Array for tables to exclude from user-based filtering **
+    protected $excludeUserScope = [
+        'waste_collections',
+        // Add other tables here as needed, e.g., 'dumping_sites', 'recycling_centers'
+    ];
+
     protected $tableTimestampsCache = [];
 
     // Define timestamp fields that need conversion from milliseconds to seconds
@@ -307,15 +313,24 @@ class SyncController extends Controller
         return $serializedData;
     }
 
-
+    /**
+     * Apply scopes for user and organisation filtering.
+     * **MODIFIED: Now uses $excludeUserScope to skip user_id filtering for specific tables.**
+     */
     protected function applyScopes($model, Request $request)
     {
         $query = $this->queryFor($model);
+        $tableName = (new $model)->getTable();
 
-        if (Schema::hasColumn((new $model)->getTable(), 'user_id')) {
-            $query->where('user_id', $request->user()->id);
+        // Check if the table is in the exclusion list before applying user_id scope
+        if (!in_array($tableName, $this->excludeUserScope)) {
+            if (Schema::hasColumn($tableName, 'user_id')) {
+                $query->where('user_id', $request->user()->id);
+            }
         }
-        if (Schema::hasColumn((new $model)->getTable(), 'organisation_id')) {
+
+        // Organisation scope is applied regardless of the exclusion list
+        if (Schema::hasColumn($tableName, 'organisation_id')) {
             $query->where('organisation_id', $request->user()->organisation_id);
         }
 
@@ -492,7 +507,7 @@ class SyncController extends Controller
                     $query = $modelClass::whereIn('uuid', $deletedUuids);
 
                     // Scope deletes to the user/org
-                    if (Schema::hasColumn($tableName, 'user_id')) {
+                    if (Schema::hasColumn($tableName, 'user_id') && !in_array($tableName, $this->excludeUserScope)) {
                         $query->where('user_id', $request->user()->id);
                     }
                     if (Schema::hasColumn($tableName, 'organisation_id')) {
