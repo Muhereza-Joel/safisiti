@@ -17,6 +17,10 @@ class AwarenessCampaign extends Model
         'uuid',
         'title',
         'description',
+        'category',
+        'status',
+        'start_date',
+        'end_date',
         'location',
         'date_conducted',
         'participants_count',
@@ -28,6 +32,8 @@ class AwarenessCampaign extends Model
 
     protected $casts = [
         'date_conducted' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'user_id' => 'integer',
         'organisation_id' => 'integer',
         'participants_count' => 'integer',

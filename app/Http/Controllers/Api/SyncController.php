@@ -91,6 +91,8 @@ class SyncController extends Controller
         'created_at',
         'deleted_at',
         'date_conducted',
+        'start_date',
+        'end_date',
         'last_collection_date',
         'scanned_at',
         'suspended_until',
