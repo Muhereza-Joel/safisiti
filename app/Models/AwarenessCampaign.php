@@ -28,6 +28,9 @@ class AwarenessCampaign extends Model
 
     protected $casts = [
         'date_conducted' => 'date',
+        'user_id' => 'integer',
+        'organisation_id' => 'integer',
+        'participants_count' => 'integer',
     ];
 
     public function getRouteKeyName(): string
