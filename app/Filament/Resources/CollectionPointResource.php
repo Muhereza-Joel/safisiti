@@ -261,6 +261,10 @@ class CollectionPointResource extends Resource
                     ->placeholder('N/A')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
+                Tables\Columns\TextColumn::make('category')
+                    ->placeholder('N/A')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('N/A')
