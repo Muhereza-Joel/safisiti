@@ -22,6 +22,7 @@
         "ramsey/uuid": "^4.8",
         "shuvroroy/filament-spatie-laravel-backup": "^2.2",
         "shuvroroy/filament-spatie-laravel-health": "^2.3",
+        "stephenjude/filament-two-factor-authentication": "^2.0",
         "tecnickcom/tcpdf": "^6.10"
     },
     "require-dev": {

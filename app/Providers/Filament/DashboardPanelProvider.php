@@ -94,7 +94,12 @@ class DashboardPanelProvider extends PanelProvider
                     ->setIcon('heroicon-o-user')
                     ->setNavigationGroup('User Management')
                     ->shouldShowSanctumTokens()
-                    ->setSort(10)
+                    ->setSort(10),
+                \Stephenjude\FilamentTwoFactorAuthentication\TwoFactorAuthenticationPlugin::make()
+                    ->enableTwoFactorAuthentication() // Enable Google 2FA
+                    ->enablePasskeyAuthentication() // Enable Passkey
+                    ->addTwoFactorMenuItem() // Add 2FA menu item
+                    ->forceTwoFactorSetup(false) // Force 2FA setup
 
             ])->userMenuItems([
                 'profile' => MenuItem::make()
