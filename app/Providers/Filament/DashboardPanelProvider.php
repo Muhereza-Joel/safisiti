@@ -13,6 +13,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Navigation\MenuItem;
+use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -32,7 +34,7 @@ class DashboardPanelProvider extends PanelProvider
             ->path('dashboard')
             ->spa()
             ->login()
-            ->profile()
+
             ->colors([
                 'primary' => Color::Emerald,
             ])
@@ -84,7 +86,26 @@ class DashboardPanelProvider extends PanelProvider
                     ->usingPage(HealthCheckResults::class)
                     ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator')),
                 \ShuvroRoy\FilamentSpatieLaravelBackup\FilamentSpatieLaravelBackupPlugin::make()->usingPage(Backups::class)
-                    ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator'))
+                    ->authorize(fn(): bool => auth()->user()->hasRole('System Administrator')),
+                \Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin::make()
+                    ->slug('my-profile')
+                    ->setTitle('My Profile')
+                    ->setNavigationLabel('My Profile')
+                    ->setIcon('heroicon-o-user')
+                    ->setNavigationGroup('User Management')
+                    ->shouldShowSanctumTokens()
+                    ->setSort(10)
+
+            ])->userMenuItems([
+                'profile' => MenuItem::make()
+                    ->label("Your Profile")
+                    ->url(fn(): string => EditProfilePage::getUrl())
+                    ->icon('heroicon-m-user-circle'),
+                'docs' => MenuItem::make()
+                    ->label("SafiSiti Documentation")
+                    ->url("#")
+                    ->icon('heroicon-m-user-circle'),
+
             ]);
     }
 }
