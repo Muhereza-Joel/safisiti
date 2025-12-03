@@ -29,7 +29,7 @@ class ViewCollectionPoint extends ViewRecord
 
                     return response()->streamDownload(
                         fn() => print($output),
-                        $record->name . '_qr.pdf'
+                        $record->uuid . '_qr.pdf'
                     );
                 }),
 

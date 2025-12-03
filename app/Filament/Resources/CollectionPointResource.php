@@ -425,8 +425,9 @@ class CollectionPointResource extends Resource
                                 $pdfContent = self::generateQrPdf($record);
 
                                 // Sanitize the name for the file inside the zip
-                                $fileNameInZip = preg_replace('/[^A-Za-z0-9\-_]/', '_', $record->name) . '_qr.pdf';
-
+                                $sanitizedName = preg_replace('/[^A-Za-z0-9\-_]/', '_', $record->name);
+                                // Use UUID as the unique identifier
+                                $fileNameInZip = $sanitizedName . '_' . $record->uuid . '.pdf';
                                 // Add the PDF string to the zip
                                 $zip->addFromString($fileNameInZip, $pdfContent);
                             }
