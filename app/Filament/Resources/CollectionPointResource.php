@@ -464,8 +464,19 @@ class CollectionPointResource extends Resource
         ];
     }
 
+    /**
+     * Generates a PDF containing the collection point details and a QR code with an embedded logo.
+     *
+     * @param CollectionPoint $record The collection point record.
+     * @return string The PDF content as a string.
+     */
     public static function generateQrPdf(CollectionPoint $record): string
     {
+        // CRITICAL: Define the path to your logo image.
+        // Ensure the image is square and accessible in your file system.
+        // Example: public_path('images/safisiti_logo_black.png')
+        $logoPath = public_path('images/icon-black.png');
+
         $qrValue = url('/dashboard/collection-points/' . $record->uuid);
 
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
@@ -494,28 +505,53 @@ class CollectionPointResource extends Resource
 
         // --- LOCATION DETAILS ---
         $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->Cell(0, 8, strtoupper($record->name), 0, 1, 'C');
+        // Display the new code
+        $pdf->Cell(0, 8, strtoupper($record->code) . ' - ' . strtoupper($record->name), 0, 1, 'C');
 
         $pdf->SetFont('helvetica', '', 12);
-        $pdf->Cell(0, 6, $record->address ?? '', 0, 1, 'C');
+        // Use optional chaining and null coalescing operator safely
+        $pdf->Cell(0, 6, $record->ward?->name . ', ' . ($record->cell?->name ?? ''), 0, 1, 'C');
         $pdf->Ln(8);
 
-        // --- QR CODE (TCPDF native) ---
+        // --- QR CODE WITH EMBEDDED LOGO ---
+
+        $qrSize = 100; // QR Code Width and Height in mm
+        $qrX = 55;     // QR Code X position (centered on A4: (210 - 100) / 2 = 55)
+        $qrY = $pdf->GetY(); // Current Y position
+
+        $logoSize = 35; // Logo Size in mm (e.g., 25% of the 100mm QR code)
+        $logoX = $qrX + (($qrSize - $logoSize) / 2); // Calculate centered X position for logo
+        $logoY = $qrY + (($qrSize - $logoSize) / 2); // Calculate centered Y position for logo
+
+        // Base style for the QR code
         $style = [
             'border' => 0,
             'vpadding' => 0,
             'hpadding' => 0,
             'fgcolor' => [0, 0, 0],
-            'bgcolor' => false
+            'bgcolor' => false,
+            'module_width' => 1,
+            'module_height' => 1,
+            'reserved' => [], // Initialize the reserved area array
         ];
 
-        /**
-         * write2DBarcode(
-         * $code, $type, $x, $y, $w, $h, $style, $align
-         * )
-         */
-        $pdf->write2DBarcode($qrValue, 'QRCODE,H', 55, $pdf->GetY(), 100, 100, $style, 'N');
-        $pdf->Ln(115);
+        // CRITICAL: Define the reserved space in the center of the QR code
+        $style['reserved'][] = [
+            'x' => $logoX,
+            'y' => $logoY,
+            'width' => $logoSize,
+            'height' => $logoSize,
+        ];
+
+        // 1. Write the QR Code (TCPDF will reserve a white square in the center)
+        $pdf->write2DBarcode($qrValue, 'QRCODE,H', $qrX, $qrY, $qrSize, $qrSize, $style, 'N');
+
+        // 2. Place the Image (Logo) on top of the reserved space
+        if (file_exists($logoPath)) {
+            $pdf->Image($logoPath, $logoX, $logoY, $logoSize, $logoSize, 'PNG', '', 'N', false, 300, '', false, false, 0, 'M', false, false, false);
+        }
+
+        $pdf->Ln(115); // Move cursor down past the QR code area
 
         // --- FOOTER ---
         $pdf->SetFont('helvetica', '', 10);
@@ -523,7 +559,7 @@ class CollectionPointResource extends Resource
         $pdf->Cell(0, 6, 'FROM ToroDev-ODA Under The Datacities Project.', 0, 1, 'C');
         $pdf->Cell(0, 6, 'Powered By MOELS GROUP: www.moelsgroup.com', 0, 1, 'C');
 
-        // Output PDF as a string
+        // Output PDF as a string (S)
         return $pdf->Output($record->name . '_qr.pdf', 'S');
     }
 
