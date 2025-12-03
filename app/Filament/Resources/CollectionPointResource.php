@@ -506,7 +506,7 @@ class CollectionPointResource extends Resource
         // --- LOCATION DETAILS ---
         $pdf->SetFont('helvetica', 'B', 16);
         // Display the new code
-        $pdf->Cell(0, 8, strtoupper($record->code) . ' - ' . strtoupper($record->name), 0, 1, 'C');
+        $pdf->Cell(0, 6, strtoupper($record->code) . ' - ' . strtoupper($record->name), 0, 1, 'C');
 
         $pdf->SetFont('helvetica', '', 12);
         // Use optional chaining and null coalescing operator safely
@@ -519,7 +519,7 @@ class CollectionPointResource extends Resource
         $qrX = 55;     // QR Code X position (centered on A4: (210 - 100) / 2 = 55)
         $qrY = $pdf->GetY(); // Current Y position
 
-        $logoSize = 35; // Logo Size in mm (e.g., 25% of the 100mm QR code)
+        $logoSize = 25; // Logo Size in mm (e.g., 25% of the 100mm QR code)
         $logoX = $qrX + (($qrSize - $logoSize) / 2); // Calculate centered X position for logo
         $logoY = $qrY + (($qrSize - $logoSize) / 2); // Calculate centered Y position for logo
 
