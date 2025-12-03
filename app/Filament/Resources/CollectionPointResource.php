@@ -254,6 +254,9 @@ class CollectionPointResource extends Resource
         return $table
             ->columns([
 
+                Tables\Columns\TextColumn::make('code')
+                    ->placeholder('N/A')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('name')
                     ->placeholder('N/A')
                     ->searchable(),

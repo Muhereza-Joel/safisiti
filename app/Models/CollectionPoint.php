@@ -15,6 +15,7 @@ class CollectionPoint extends Model
 
     protected $fillable = [
         'uuid',
+        'code',
         'name',
         'category',
         'head_name',
